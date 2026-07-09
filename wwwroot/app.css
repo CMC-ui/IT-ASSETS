@@ -246,8 +246,11 @@ tr:hover {
 }
 [data-bs-theme="matrix"] .form-control, [data-bs-theme="matrix"] .form-select {
     background-color: #000;
-    color: #00FF41;
+    color: #FFFFFF !important;
     border-color: #008F11;
+}
+[data-bs-theme="matrix"] .form-control::placeholder, [data-bs-theme="matrix"] .form-select::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 [data-bs-theme="matrix"] .form-control:focus, [data-bs-theme="matrix"] .form-select:focus {
     box-shadow: 0 0 0 0.25rem rgba(0, 255, 65, 0.25);
