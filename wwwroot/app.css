@@ -259,8 +259,12 @@ tr:hover {
     border: 1px solid #00FF41;
     box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
 }
-[data-bs-theme="matrix"] .text-muted {
-    color: #008F11 !important;
+[data-bs-theme="matrix"] .text-muted,
+[data-bs-theme="matrix"] p, 
+[data-bs-theme="matrix"] span:not(.badge), 
+[data-bs-theme="matrix"] h1, [data-bs-theme="matrix"] h2, [data-bs-theme="matrix"] h3,
+[data-bs-theme="matrix"] h4, [data-bs-theme="matrix"] h5, [data-bs-theme="matrix"] h6 {
+    color: #00FF41 !important;
 }
 [data-bs-theme="matrix"] .bg-light {
     background-color: #0d0d0d !important;
