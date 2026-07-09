@@ -7,6 +7,7 @@
 @using QRCoder
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Assets</PageTitle>
 
@@ -81,18 +82,25 @@
 
 @if (SelectedAsset != null)
 {
+    <div id="printAssetData" class="d-none">
+        <h2 class="mb-4">Asset Details: @SelectedAsset.AssetTag</h2>
+        <table class="table table-bordered table-striped">
+            <tbody>
+                <tr><th style="width: 30%">Device Type</th><td>@SelectedAsset.DeviceType</td></tr>
+                <tr><th>Make/Model</th><td>@SelectedAsset.MakeModel</td></tr>
+                <tr><th>Status</th><td>@SelectedAsset.Status</td></tr>
+                <tr><th>MAC Address</th><td>@SelectedAsset.MacAddress</td></tr>
+                <tr><th>IP Address</th><td>@SelectedAsset.IpAddress</td></tr>
+                <tr><th>Purchase Price</th><td>@SelectedAsset.PurchasePrice.ToString("C", new System.Globalization.CultureInfo("en-US"))</td></tr>
+                <tr><th>Warranty Expiration</th><td>@SelectedAsset.WarrantyExpiration?.ToString("yyyy-MM-dd")</td></tr>
+                <tr><th>Hardware Specs</th><td>@SelectedAssetSpecs</td></tr>
+                <tr><th>TeamViewer ID</th><td>@SelectedAssetTeamViewer</td></tr>
+                <tr><th>AnyDesk ID</th><td>@SelectedAssetAnyDesk</td></tr>
+            </tbody>
+        </table>
+    </div>
     <!-- Quick Manage Modal -->
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <style>
-            @@media print {
-                body { background: white !important; }
-                .card { display: none !important; }
-                .modal { position: absolute; left: 0; top: 0; margin: 0; padding: 0; overflow: visible !important; background: white !important; }
-                .modal-dialog { margin: 0; width: 100%; max-width: 100%; }
-                .modal-content { border: none; box-shadow: none; }
-                .modal-footer, .btn-close { display: none !important; }
-            }
-        </style>
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -247,7 +255,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="PrintManageModal"><i class="bi bi-printer"></i> Print</button>
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
                     <button type="button" class="btn btn-primary" @onclick="SaveChanges">Save changes</button>
                 </div>
@@ -576,6 +584,24 @@
     {
         AssetToPrint = null;
         QRBase64 = "";
+    }
+
+    private async Task PrintManageModal()
+    {
+        var js = @"
+            var printContents = document.getElementById('printAssetData').innerHTML;
+            var myWindow = window.open('', '', 'width=800,height=800');
+            myWindow.document.write('<html><head><title>Print Asset</title>');
+            myWindow.document.write('<link href=""/lib/bootstrap/dist/css/bootstrap.min.css"" rel=""stylesheet"">');
+            myWindow.document.write('<style>body{padding:40px; font-family: sans-serif;}</style>');
+            myWindow.document.write('</head><body>');
+            myWindow.document.write(printContents);
+            myWindow.document.write('<script>setTimeout(function(){ window.print(); window.close(); }, 500);</script>');
+            myWindow.document.write('</body></html>');
+            myWindow.document.close();
+            myWindow.focus();
+        ";
+        await JSRuntime.InvokeVoidAsync("eval", js);
     }
 
     private string GenerateQRCodeBase64(string text)
