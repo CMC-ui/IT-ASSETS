@@ -56,6 +56,12 @@ main {
         height: 100vh;
         position: sticky;
         top: 0;
+        transition: width 0.3s ease-in-out;
+        overflow: hidden;
+    }
+
+    .page.sidebar-hidden .sidebar {
+        width: 0;
     }
 
     .top-row {

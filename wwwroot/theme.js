@@ -43,3 +43,10 @@ function downloadFileFromBase64(filename, base64) {
     link.click();
     document.body.removeChild(link);
 }
+
+function toggleSidebar() {
+    const page = document.querySelector('.page');
+    if (page) {
+        page.classList.toggle('sidebar-hidden');
+    }
+}
