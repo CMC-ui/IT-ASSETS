@@ -30,15 +30,9 @@
                         <th>Asset Tag</th>
                         <th>Type</th>
                         <th>Make/Model</th>
-                        <th>MAC Address</th>
                         <th>IP Address</th>
                         <th>Branch</th>
                         <th>Dept</th>
-                        <th>Price</th>
-                        <th>Warranty</th>
-                        <th>Specs</th>
-                        <th>TeamViewer</th>
-                        <th>AnyDesk</th>
                         <th>User</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -47,11 +41,11 @@
                 <tbody>
                     @if (FilteredAssets == null)
                     {
-                        <tr><td colspan="15" class="text-center">Loading...</td></tr>
+                        <tr><td colspan="9" class="text-center">Loading...</td></tr>
                     }
                     else if (!FilteredAssets.Any())
                     {
-                        <tr><td colspan="15" class="text-center">No assets found.</td></tr>
+                        <tr><td colspan="9" class="text-center">No assets found.</td></tr>
                     }
                     else
                     {
@@ -61,15 +55,9 @@
                                 <td><strong>@asset.AssetTag</strong></td>
                                 <td>@asset.DeviceType</td>
                                 <td>@asset.MakeModel</td>
-                                <td>@asset.MacAddress</td>
                                 <td>@asset.IpAddress</td>
                                 <td>@asset.Branch?.Name</td>
                                 <td>@asset.Department?.Name</td>
-                                <td>@asset.PurchasePrice.ToString("C", new System.Globalization.CultureInfo("en-US"))</td>
-                                <td>@asset.WarrantyExpiration?.ToString("yyyy-MM-dd")</td>
-                                <td>@ExtractDetail(asset.Details, "Specs")</td>
-                                <td>@ExtractDetail(asset.Details, "TeamViewerId")</td>
-                                <td>@ExtractDetail(asset.Details, "AnyDeskId")</td>
                                 <td>@asset.User?.Name</td>
                                 <td>
                                     <span class="badge @GetStatusBadgeClass(asset.Status)">@asset.Status</span>
