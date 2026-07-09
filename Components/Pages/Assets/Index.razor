@@ -14,18 +14,27 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="row mb-3">
-            <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="Search by Asset Tag, IP, or User..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterAssets" />
+            <div class="col-md-6 d-flex">
+                <input type="text" class="form-control me-2" placeholder="Search by Asset Tag, IP, or User..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterAssets" />
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="viewToggle" id="listView" autocomplete="off" checked="@(!IsCardView)" @onchange="@(() => IsCardView = false)">
+                    <label class="btn btn-outline-secondary" for="listView"><i class="bi bi-list-ul"></i></label>
+
+                    <input type="radio" class="btn-check" name="viewToggle" id="cardView" autocomplete="off" checked="@IsCardView" @onchange="@(() => IsCardView = true)">
+                    <label class="btn btn-outline-secondary" for="cardView"><i class="bi bi-grid"></i></label>
+                </div>
             </div>
-            <div class="col-md-8 text-end">
+            <div class="col-md-6 text-end">
                 <button class="btn btn-primary shadow-sm" @onclick="OpenAddModal">
                     <i class="bi bi-plus-circle"></i> Add Asset
                 </button>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
+        @if (!IsCardView)
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
                 <thead style="background-color: var(--bs-tertiary-bg); color: var(--bs-primary);">
                     <tr>
                         <th>Asset Tag</th>
@@ -77,6 +86,50 @@
                 </tbody>
             </table>
         </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @if (FilteredAssets == null)
+                {
+                    <div class="col-12 text-center">Loading...</div>
+                }
+                else if (!FilteredAssets.Any())
+                {
+                    <div class="col-12 text-center">No assets found.</div>
+                }
+                else
+                {
+                    @foreach (var asset in FilteredAssets)
+                    {
+                        <div class="col-md-4 col-sm-6">
+                            <div class="card h-100 shadow-sm border-0 bg-light">
+                                <div class="card-body position-relative">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title fw-bold mb-0">@asset.AssetTag</h5>
+                                        <span class="badge @GetStatusBadgeClass(asset.Status)">@asset.Status</span>
+                                    </div>
+                                    <h6 class="card-subtitle mb-2 text-muted">@asset.DeviceType</h6>
+                                    <hr class="my-2" />
+                                    <p class="card-text small mb-1"><strong>Make/Model:</strong> @asset.MakeModel</p>
+                                    <p class="card-text small mb-1"><strong>IP:</strong> @asset.IpAddress</p>
+                                    <p class="card-text small mb-1"><strong>User:</strong> @asset.User?.Name</p>
+                                    <p class="card-text small mb-3"><strong>Location:</strong> @asset.Branch?.Name - @asset.Department?.Name</p>
+                                </div>
+                                <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between pb-3 px-3">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenModal(asset)">
+                                        <i class="bi bi-pencil"></i> Manage
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenPrintModal(asset)">
+                                        <i class="bi bi-printer"></i> Print QR
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        }
     </div>
 </div>
 
@@ -478,6 +531,7 @@
 @code {
     [Inject] private ItAssets.Services.FileStorageService FileStorage { get; set; } = default!;
 
+    private bool IsCardView = false;
     private List<Asset>? AllAssets;
     private List<Asset>? FilteredAssets;
     private List<ApplicationUser>? AllUsers;
