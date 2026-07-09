@@ -1,0 +1,726 @@
+@page "/users"
+@rendermode InteractiveServer
+@using ItAssets.Data
+@using ItAssets.Models
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Identity
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject ItAssets.Services.FileStorageService FileStorage
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+<PageTitle>Users</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="btn-group shadow-sm" role="group">
+        <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off" checked="@(!IsCardView)" @onchange="@(() => IsCardView = false)">
+        <label class="btn btn-outline-primary" for="listView"><i class="bi bi-list-ul"></i> List</label>
+
+        <input type="radio" class="btn-check" name="viewMode" id="cardView" autocomplete="off" checked="@IsCardView" @onchange="@(() => IsCardView = true)">
+        <label class="btn btn-outline-primary" for="cardView"><i class="bi bi-grid-fill"></i> Grid</label>
+    </div>
+
+    @if (isAdmin)
+    {
+        <button class="btn btn-primary shadow-sm" @onclick="OpenAddUserModal"><i class="bi bi-person-plus"></i> Add User</button>
+    }
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="row mb-3 g-2">
+            <div class="col-md-3">
+                <input type="text" class="form-control" placeholder="Search Name, Email, Ext..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterUsers" />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="FilterRole" @bind:after="FilterUsers">
+                    <option value="">All Roles</option>
+                    @foreach (var role in AvailableRoles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                    <option value="None">None</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="FilterBranch" @bind:after="FilterUsers">
+                    <option value="">All Branches</option>
+                    @foreach (var branch in Branches)
+                    {
+                        <option value="@branch">@branch</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="FilterDepartment" @bind:after="FilterUsers">
+                    <option value="">All Departments</option>
+                    @foreach (var dept in Departments)
+                    {
+                        <option value="@dept">@dept</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (!IsCardView)
+        {
+            <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead style="background-color: var(--bs-tertiary-bg); color: var(--bs-primary);">
+                    <tr>
+                        <th @onclick="@(() => ToggleSort("Name"))" style="cursor:pointer; user-select:none;" title="Click to sort">Name <i class="@GetSortIcon("Name")"></i></th>
+                        <th @onclick="@(() => ToggleSort("Email"))" style="cursor:pointer; user-select:none;" title="Click to sort">Email <i class="@GetSortIcon("Email")"></i></th>
+                        <th @onclick="@(() => ToggleSort("Extension"))" style="cursor:pointer; user-select:none;" title="Click to sort">Extension <i class="@GetSortIcon("Extension")"></i></th>
+                        <th @onclick="@(() => ToggleSort("Role"))" style="cursor:pointer; user-select:none;" title="Click to sort">Role <i class="@GetSortIcon("Role")"></i></th>
+                        <th @onclick="@(() => ToggleSort("Branch"))" style="cursor:pointer; user-select:none;" title="Click to sort">Branch <i class="@GetSortIcon("Branch")"></i></th>
+                        <th @onclick="@(() => ToggleSort("Department"))" style="cursor:pointer; user-select:none;" title="Click to sort">Department <i class="@GetSortIcon("Department")"></i></th>
+                        <th @onclick="@(() => ToggleSort("Assets"))" style="cursor:pointer; user-select:none;" title="Click to sort">Assets Assigned <i class="@GetSortIcon("Assets")"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (FilteredUsers == null)
+                    {
+                        <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                    }
+                    else if (!FilteredUsers.Any())
+                    {
+                        <tr><td colspan="8" class="text-center">No users found.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in FilteredUsers)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                                        {
+                                            <img src="@user.ProfilePictureUrl" alt="@user.Name" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-person-circle text-secondary fs-4 me-2"></i>
+                                        }
+                                        <strong>@user.Name</strong>
+                                    </div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td><span class="badge bg-secondary">@(string.IsNullOrEmpty(user.Extension) ? "None" : user.Extension)</span></td>
+                                <td><span class="badge bg-info text-dark">@(UserRolesMap.TryGetValue(user.Id, out var r) ? r : "None")</span></td>
+                                <td>@user.Branch?.Name</td>
+                                <td>@user.Department?.Name</td>
+                                <td>
+                                    @if (user.Assets.Any())
+                                    {
+                                        <span class="badge bg-primary rounded-pill">@user.Assets.Count</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">0</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" @onclick="() => OpenModal(user)">
+                                        <i class="bi bi-eye"></i> View Assets
+                                    </button>
+                                    @if (isAdmin || user.UserName == currentUserName)
+                                    {
+                                        <button class="btn btn-sm btn-outline-warning ms-1" @onclick="() => OpenEditUserModal(user)">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </button>
+                                    }
+                                    @if (isAdmin && user.UserName != "trevor@system.local")
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => DeleteUser(user)">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @if (FilteredUsers == null)
+                {
+                    <div class="col-12 text-center">Loading...</div>
+                }
+                else if (!FilteredUsers.Any())
+                {
+                    <div class="col-12 text-center">No users found.</div>
+                }
+                else
+                {
+                    @foreach (var user in FilteredUsers)
+                    {
+                        var role = UserRolesMap.TryGetValue(user.Id, out var r) ? r : "None";
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 shadow-sm border-0" style="background-color: var(--bs-tertiary-bg); transition: transform 0.2s ease-in-out;">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                                            {
+                                                <img src="@user.ProfilePictureUrl" alt="@user.Name" class="rounded-circle shadow-sm me-3" style="width: 48px; height: 48px; object-fit: cover;" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-person-circle text-secondary me-3" style="font-size: 3rem; line-height: 1;"></i>
+                                            }
+                                            <div>
+                                                <h5 class="card-title fw-bold text-primary mb-1">@user.Name</h5>
+                                                <span class="badge bg-info text-dark shadow-sm">@role</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small mb-3 flex-grow-1">
+                                        <div class="mb-2"><i class="bi bi-envelope-fill me-2 text-secondary"></i>@user.Email</div>
+                                        <div class="mb-2"><i class="bi bi-telephone-fill me-2 text-secondary"></i>Ext: @(string.IsNullOrEmpty(user.Extension) ? "None" : user.Extension)</div>
+                                        <div class="mb-2"><i class="bi bi-building-fill me-2 text-secondary"></i>@(user.Branch?.Name ?? "None") / @(user.Department?.Name ?? "None")</div>
+                                        <div class="mb-2">
+                                            <i class="bi bi-laptop-fill me-2 text-secondary"></i>Assets: 
+                                            @if (user.Assets.Any())
+                                            {
+                                                <span class="badge bg-primary rounded-pill shadow-sm">@user.Assets.Count</span>
+                                            }
+                                            else
+                                            {
+                                                <span>0</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 mt-auto">
+                                        <button class="btn btn-sm btn-outline-info flex-grow-1 shadow-sm" @onclick="() => OpenModal(user)">
+                                            <i class="bi bi-eye"></i> View Assets
+                                        </button>
+                                        @if (isAdmin || user.UserName == currentUserName)
+                                        {
+                                            <button class="btn btn-sm btn-outline-warning shadow-sm" @onclick="() => OpenEditUserModal(user)" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        }
+                                        @if (isAdmin && user.UserName != "trevor@system.local")
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger shadow-sm" @onclick="() => DeleteUser(user)" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (SelectedUser != null)
+{
+    <!-- View User Assets Modal -->
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assets assigned to @SelectedUser.Name</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    @if (!SelectedUser.Assets.Any())
+                    {
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No assets are currently assigned to this user.
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Asset Tag</th>
+                                    <th>Type</th>
+                                    <th>Make/Model</th>
+                                    <th>Status</th>
+                                    @if (isAdmin)
+                                    {
+                                        <th>Actions</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var asset in SelectedUser.Assets)
+                                {
+                                    <tr>
+                                        <td><a href="/?search=@asset.AssetTag" class="text-decoration-none"><strong>@asset.AssetTag</strong></a></td>
+                                        <td>@asset.DeviceType</td>
+                                        <td>@asset.MakeModel</td>
+                                        <td>
+                                            <span class="badge @GetStatusBadgeClass(asset.Status)">@asset.Status</span>
+                                        </td>
+                                        @if (isAdmin)
+                                        {
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => UnassignAsset(asset)">Remove</button>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    @if (UnassignedAssets != null && UnassignedAssets.Any())
+                    {
+                        <div class="p-3 bg-light border-top">
+                            <div class="row align-items-end">
+                                <div class="col">
+                                    <label class="form-label mb-1"><strong>Assign New Asset</strong></label>
+                                    <select class="form-select" @bind="AssetToAssignId">
+                                        <option value="">-- Select an Unassigned Asset --</option>
+                                        @foreach (var ua in UnassignedAssets)
+                                        {
+                                            <option value="@ua.Id">@ua.AssetTag - @ua.MakeModel (@ua.DeviceType)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-primary" @onclick="AssignAssetToUser" disabled="@(!AssetToAssignId.HasValue)">Assign</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (SelectedUserForEdit != null || NewUser != null)
+{
+    var isNewUser = NewUser != null;
+    var userContext = isNewUser ? NewUser! : SelectedUserForEdit!;
+    var title = isNewUser ? "Add New User" : $"Edit User: {userContext.Name}";
+
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@title</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" @bind="userContext.Name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Profile Picture</label>
+                        <InputFile class="form-control" OnChange="HandleProfilePictureSelection" accept="image/*" />
+                        @if (!string.IsNullOrEmpty(userContext.ProfilePictureUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@userContext.ProfilePictureUrl" alt="Profile Picture" class="rounded-circle shadow-sm" style="width: 64px; height: 64px; object-fit: cover;" />
+                                <span class="text-muted small ms-2">Current picture</span>
+                            </div>
+                        }
+                    </div>
+                    @if (isNewUser)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Email (Username) <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" @bind="userContext.Email" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" @bind="NewUserPassword" required />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="@userContext.Email" readonly disabled />
+                        </div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Extension</label>
+                        <input type="text" class="form-control" @bind="userContext.Extension" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Branch</label>
+                        <select class="form-select" @bind="userContext.BranchId">
+                            <option value="">-- Select Branch --</option>
+                            @if (AllBranches != null)
+                            {
+                                @foreach (var b in AllBranches)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select class="form-select" @bind="userContext.DepartmentId">
+                            <option value="">-- Select Department --</option>
+                            @if (AllDepartments != null)
+                            {
+                                @foreach (var d in AllDepartments)
+                                {
+                                    <option value="@d.Id">@d.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" @bind="SelectedRole">
+                            <option value="">None</option>
+                            @foreach (var role in AvailableRoles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditUserModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveUser">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string currentUserName = "";
+    private bool isAdmin = false;
+
+    private List<ApplicationUser>? AllUsers;
+    private List<ApplicationUser>? FilteredUsers;
+    private List<Branch>? AllBranches;
+    private List<Department>? AllDepartments;
+    private bool IsCardView = false;
+    private IBrowserFile? profilePictureFile;
+
+    private void HandleProfilePictureSelection(InputFileChangeEventArgs e)
+    {
+        profilePictureFile = e.File;
+    }
+
+    private string SearchQuery = "";
+    private string FilterRole = "";
+    private string FilterBranch = "";
+    private string FilterDepartment = "";
+    private List<string> Branches = new();
+    private List<string> Departments = new();
+    private ApplicationUser? SelectedUser;
+    private List<Asset>? UnassignedAssets;
+    private int? AssetToAssignId;
+    private Dictionary<string, string> UserRolesMap = new();
+    private ApplicationUser? SelectedUserForEdit;
+    private ApplicationUser? NewUser;
+    private string NewUserPassword = "";
+    private string SelectedRole = "";
+    private List<string> AvailableRoles = new() { "Admin", "Technician", "Standard User" };
+
+    private string SortColumn = "";
+    private string SortOrder = "";
+
+    private void ToggleSort(string column)
+    {
+        if (SortColumn == column)
+        {
+            if (SortOrder == "") SortOrder = "asc";
+            else if (SortOrder == "asc") SortOrder = "desc";
+            else { SortOrder = ""; SortColumn = ""; }
+        }
+        else
+        {
+            SortColumn = column;
+            SortOrder = "asc";
+        }
+        FilterUsers();
+    }
+    
+    private string GetSortIcon(string column)
+    {
+        if (SortColumn != column || SortOrder == "") return "bi bi-arrow-down-up text-muted\" style=\"font-size: 0.8em;";
+        return SortOrder == "asc" ? "bi bi-sort-down text-primary" : "bi bi-sort-up text-primary";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserName = authState.User.Identity?.Name ?? "";
+        isAdmin = authState.User.IsInRole("Admin");
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        AllBranches = await DbContext.Branches.ToListAsync();
+        AllDepartments = await DbContext.Departments.ToListAsync();
+        
+        AllUsers = await DbContext.Users
+            .Include(u => u.Branch)
+            .Include(u => u.Department)
+            .Include(u => u.Assets.Where(a => !a.IsDeleted))
+            .OrderBy(u => u.Name)
+            .ToListAsync();
+            
+        var userRoles = await DbContext.UserRoles.ToListAsync();
+        var allRoles = await DbContext.Roles.ToListAsync();
+        foreach (var u in AllUsers)
+        {
+            var roleId = userRoles.FirstOrDefault(ur => ur.UserId == u.Id)?.RoleId;
+            var roleName = allRoles.FirstOrDefault(r => r.Id == roleId)?.Name ?? "None";
+            UserRolesMap[u.Id] = roleName;
+        }
+        
+        Branches = AllUsers.Where(u => u.Branch != null).Select(u => u.Branch!.Name).Distinct().OrderBy(n => n).ToList();
+        Departments = AllUsers.Where(u => u.Department != null).Select(u => u.Department!.Name).Distinct().OrderBy(n => n).ToList();
+
+        FilterUsers();
+    }
+
+    private void FilterUsers()
+    {
+        if (AllUsers == null) return;
+
+        var query = AllUsers.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            var q = SearchQuery.ToLower();
+            query = query.Where(u => 
+                (u.Name != null && u.Name.ToLower().Contains(q)) || 
+                (u.Email != null && u.Email.ToLower().Contains(q)) ||
+                (u.Extension != null && u.Extension.ToLower().Contains(q))
+            );
+        }
+
+        if (!string.IsNullOrEmpty(FilterRole))
+        {
+            query = query.Where(u => UserRolesMap.ContainsKey(u.Id) && UserRolesMap[u.Id] == FilterRole);
+        }
+
+        if (!string.IsNullOrEmpty(FilterBranch))
+        {
+            query = query.Where(u => u.Branch != null && u.Branch.Name == FilterBranch);
+        }
+
+        if (!string.IsNullOrEmpty(FilterDepartment))
+        {
+            query = query.Where(u => u.Department != null && u.Department.Name == FilterDepartment);
+        }
+
+        if (!string.IsNullOrEmpty(SortColumn) && !string.IsNullOrEmpty(SortOrder))
+        {
+            bool isAsc = SortOrder == "asc";
+            query = SortColumn switch
+            {
+                "Name" => isAsc ? query.OrderBy(u => u.Name) : query.OrderByDescending(u => u.Name),
+                "Email" => isAsc ? query.OrderBy(u => u.Email) : query.OrderByDescending(u => u.Email),
+                "Extension" => isAsc ? 
+                    query.OrderBy(u => string.IsNullOrEmpty(u.Extension) ? int.MaxValue : int.TryParse(u.Extension, out int ext) ? ext : int.MaxValue) : 
+                    query.OrderByDescending(u => string.IsNullOrEmpty(u.Extension) ? int.MinValue : int.TryParse(u.Extension, out int ext) ? ext : int.MinValue),
+                "Role" => isAsc ? query.OrderBy(u => UserRolesMap.TryGetValue(u.Id, out var r) ? r : "") : query.OrderByDescending(u => UserRolesMap.TryGetValue(u.Id, out var r) ? r : ""),
+                "Branch" => isAsc ? query.OrderBy(u => u.Branch?.Name) : query.OrderByDescending(u => u.Branch?.Name),
+                "Department" => isAsc ? query.OrderBy(u => u.Department?.Name) : query.OrderByDescending(u => u.Department?.Name),
+                "Assets" => isAsc ? query.OrderBy(u => u.Assets?.Count ?? 0) : query.OrderByDescending(u => u.Assets?.Count ?? 0),
+                _ => query
+            };
+        }
+
+        FilteredUsers = query.ToList();
+    }
+
+    private async Task OpenModal(ApplicationUser user)
+    {
+        SelectedUser = user;
+        UnassignedAssets = await DbContext.Assets.Where(a => !a.IsDeleted && a.UserId == null).OrderBy(a => a.AssetTag).ToListAsync();
+        AssetToAssignId = null;
+    }
+
+    private async Task AssignAssetToUser()
+    {
+        if (SelectedUser != null && AssetToAssignId.HasValue)
+        {
+            var asset = await DbContext.Assets.FindAsync(AssetToAssignId.Value);
+            if (asset != null)
+            {
+                asset.UserId = SelectedUser.Id;
+                await DbContext.SaveChangesAsync();
+                
+                SelectedUser.Assets.Add(asset);
+                UnassignedAssets?.RemoveAll(a => a.Id == asset.Id);
+                AssetToAssignId = null;
+            }
+        }
+    }
+
+    private async Task UnassignAsset(Asset asset)
+    {
+        if (SelectedUser != null)
+        {
+            var dbAsset = await DbContext.Assets.FindAsync(asset.Id);
+            if (dbAsset != null)
+            {
+                dbAsset.UserId = null;
+                await DbContext.SaveChangesAsync();
+                
+                var assetToRemove = SelectedUser.Assets.FirstOrDefault(a => a.Id == asset.Id);
+                if (assetToRemove != null)
+                {
+                    SelectedUser.Assets.Remove(assetToRemove);
+                }
+                
+                if (UnassignedAssets != null && !UnassignedAssets.Any(a => a.Id == asset.Id))
+                {
+                    UnassignedAssets.Add(dbAsset);
+                    UnassignedAssets = UnassignedAssets.OrderBy(a => a.AssetTag).ToList();
+                }
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        SelectedUser = null;
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Active" => "bg-success",
+            "In Repair" => "bg-warning text-dark",
+            "Decommissioned" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void OpenAddUserModal()
+    {
+        NewUser = new ApplicationUser();
+        NewUserPassword = "";
+        SelectedRole = "Standard User";
+        SelectedUserForEdit = null;
+        profilePictureFile = null;
+    }
+
+    private void OpenEditUserModal(ApplicationUser user)
+    {
+        SelectedUserForEdit = new ApplicationUser
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Extension = user.Extension,
+            BranchId = user.BranchId,
+            DepartmentId = user.DepartmentId,
+            ProfilePictureUrl = user.ProfilePictureUrl
+        };
+        SelectedRole = UserRolesMap.TryGetValue(user.Id, out var r) && r != "None" ? r : "";
+        NewUser = null;
+        profilePictureFile = null;
+    }
+
+    private void CloseEditUserModal()
+    {
+        SelectedUserForEdit = null;
+        NewUser = null;
+    }
+
+    private async Task SaveUser()
+    {
+        var targetUser = NewUser ?? SelectedUserForEdit;
+        if (targetUser == null) return;
+
+        if (profilePictureFile != null)
+        {
+            try
+            {
+                var fileName = await FileStorage.SaveFileAsync(profilePictureFile);
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    targetUser.ProfilePictureUrl = $"/uploads/{fileName}";
+                }
+            }
+            catch (Exception)
+            {
+                // Handle file size or generic upload error if needed
+            }
+        }
+
+        if (NewUser != null)
+        {
+            if (string.IsNullOrWhiteSpace(NewUser.Name) || string.IsNullOrWhiteSpace(NewUser.Email) || string.IsNullOrWhiteSpace(NewUserPassword))
+                return;
+                
+            NewUser.UserName = NewUser.Email;
+            var result = await UserManager.CreateAsync(NewUser, NewUserPassword);
+            if (result.Succeeded)
+            {
+                if (!string.IsNullOrEmpty(SelectedRole))
+                {
+                    await UserManager.AddToRoleAsync(NewUser, SelectedRole);
+                }
+            }
+        }
+        else if (SelectedUserForEdit != null)
+        {
+            if (string.IsNullOrWhiteSpace(SelectedUserForEdit.Name)) return;
+            
+            var dbUser = await UserManager.FindByIdAsync(SelectedUserForEdit.Id);
+            if (dbUser != null)
+            {
+                dbUser.Name = SelectedUserForEdit.Name;
+                dbUser.Extension = SelectedUserForEdit.Extension;
+                dbUser.BranchId = SelectedUserForEdit.BranchId;
+                dbUser.DepartmentId = SelectedUserForEdit.DepartmentId;
+                dbUser.ProfilePictureUrl = SelectedUserForEdit.ProfilePictureUrl;
+                await UserManager.UpdateAsync(dbUser);
+                
+                var currentRoles = await UserManager.GetRolesAsync(dbUser);
+                await UserManager.RemoveFromRolesAsync(dbUser, currentRoles);
+                
+                if (!string.IsNullOrEmpty(SelectedRole))
+                {
+                    await UserManager.AddToRoleAsync(dbUser, SelectedRole);
+                }
+            }
+        }
+
+        CloseEditUserModal();
+        await LoadUsers();
+    }
+
+    private async Task DeleteUser(ApplicationUser user)
+    {
+        if (user.UserName == "trevor@system.local") return;
+        
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to permanently delete user '{user.Name}'?");
+        if (!confirmed) return;
+
+        var dbUser = await UserManager.FindByIdAsync(user.Id);
+        if (dbUser != null)
+        {
+            await UserManager.DeleteAsync(dbUser);
+            await LoadUsers();
+        }
+    }
+}

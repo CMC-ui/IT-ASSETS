@@ -1,0 +1,20 @@
+# BUILD FOLDERS #
+bin/
+obj/
+
+# DB #
+*.db
+*.db-shm
+*.db-wal
+app.db
+
+# UPLOADS #
+uploads/
+
+# MAC #
+.DS_Store
+
+# IDE #
+.vscode/
+.idea/
+*.user

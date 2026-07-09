@@ -1,0 +1,64 @@
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <img src="favicon.png" alt="Logo" style="height: 24px; margin-right: 10px;" />
+            IT ASSETS
+        </a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-laptop-nav-menu" aria-hidden="true"></span> Assets
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="users">
+                <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> Users
+            </NavLink>
+        </div>
+
+        <AuthorizeView Roles="Admin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="import">
+                    <span class="bi bi-upload-nav-menu" aria-hidden="true"></span> Bulk Import
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <div class="mt-auto pt-3 border-top border-secondary">
+            <AuthorizeView Context="authContext">
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <form method="post" action="Identity/Account/Logout?returnUrl=/Identity/Account/Login">
+                            <AntiforgeryToken />
+                            <button type="submit" class="nav-link btn btn-link w-100 text-start">
+                                <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
+                            </button>
+                        </form>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="Identity/Account/Login">
+                            <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Login
+                        </NavLink>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            <div class="nav-item px-4 mt-2 mb-3 d-flex align-items-center justify-content-between">
+                <span style="color: #d7d7d7; font-size: 0.9rem;"><i class="bi bi-moon-stars-fill text-warning me-2"></i>Theme</span>
+                <div class="form-check form-switch m-0 p-0 d-flex align-items-center">
+                    <input class="form-check-input ms-0 mt-0" type="checkbox" role="switch" id="themeToggleSwitch" onchange="toggleTheme()" style="cursor: pointer; width: 2.2em; height: 1.1em; background-color: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.1);">
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+

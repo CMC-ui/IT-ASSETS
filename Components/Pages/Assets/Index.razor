@@ -1,0 +1,712 @@
+@page "/"
+@page "/assets"
+@rendermode InteractiveServer
+@using ItAssets.Data
+@using ItAssets.Models
+@using Microsoft.EntityFrameworkCore
+@using QRCoder
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavManager
+
+<PageTitle>Assets</PageTitle>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Search by Asset Tag, IP, or User..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterAssets" />
+            </div>
+            <div class="col-md-8 text-end">
+                <button class="btn btn-primary shadow-sm" @onclick="OpenAddModal">
+                    <i class="bi bi-plus-circle"></i> Add Asset
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead style="background-color: var(--bs-tertiary-bg); color: var(--bs-primary);">
+                    <tr>
+                        <th>Asset Tag</th>
+                        <th>Type</th>
+                        <th>Make/Model</th>
+                        <th>MAC Address</th>
+                        <th>IP Address</th>
+                        <th>Branch</th>
+                        <th>Dept</th>
+                        <th>Price</th>
+                        <th>Warranty</th>
+                        <th>Specs</th>
+                        <th>TeamViewer</th>
+                        <th>AnyDesk</th>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (FilteredAssets == null)
+                    {
+                        <tr><td colspan="15" class="text-center">Loading...</td></tr>
+                    }
+                    else if (!FilteredAssets.Any())
+                    {
+                        <tr><td colspan="15" class="text-center">No assets found.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var asset in FilteredAssets)
+                        {
+                            <tr>
+                                <td><strong>@asset.AssetTag</strong></td>
+                                <td>@asset.DeviceType</td>
+                                <td>@asset.MakeModel</td>
+                                <td>@asset.MacAddress</td>
+                                <td>@asset.IpAddress</td>
+                                <td>@asset.Branch?.Name</td>
+                                <td>@asset.Department?.Name</td>
+                                <td>@asset.PurchasePrice.ToString("C")</td>
+                                <td>@asset.WarrantyExpiration?.ToString("yyyy-MM-dd")</td>
+                                <td>@ExtractDetail(asset.Details, "Specs")</td>
+                                <td>@ExtractDetail(asset.Details, "TeamViewerId")</td>
+                                <td>@ExtractDetail(asset.Details, "AnyDeskId")</td>
+                                <td>@asset.User?.Name</td>
+                                <td>
+                                    <span class="badge @GetStatusBadgeClass(asset.Status)">@asset.Status</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenModal(asset)">
+                                        <i class="bi bi-pencil"></i> Manage
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenPrintModal(asset)">
+                                        <i class="bi bi-printer"></i> Print QR
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (SelectedAsset != null)
+{
+    <!-- Quick Manage Modal -->
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Asset @SelectedAsset.AssetTag</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Asset Tag <span class="text-muted">(Auto-generated)</span></label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.AssetTag" readonly disabled />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Device Type</label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.DeviceType" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Make/Model</label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.MakeModel" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" @bind="SelectedAsset.Status">
+                                <option value="Active">Active</option>
+                                <option value="In Repair">In Repair</option>
+                                <option value="Decommissioned">Decommissioned</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">MAC Address</label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.MacAddress" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">IP Address</label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.IpAddress" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Branch</label>
+                            <select class="form-select" @bind="SelectedAsset.BranchId">
+                                <option value="">-- Select Branch --</option>
+                                @if (AllBranches != null)
+                                {
+                                    @foreach (var b in AllBranches)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" @bind="SelectedAsset.DepartmentId">
+                                <option value="">-- Select Department --</option>
+                                @if (AllDepartments != null)
+                                {
+                                    @foreach (var d in AllDepartments)
+                                    {
+                                        <option value="@d.Id">@d.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assigned User</label>
+                        <select class="form-select" @bind="SelectedAsset.UserId">
+                            <option value="">-- Unassigned --</option>
+                            @if (AllUsers != null)
+                            {
+                                @foreach (var user in AllUsers)
+                                {
+                                    <option value="@user.Id">@user.Name (@user.Email)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Purchase Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" @bind="SelectedAsset.PurchasePrice" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Warranty Expiration</label>
+                            <input type="date" class="form-control" @bind="SelectedAsset.WarrantyExpiration" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hardware Specs</label>
+                        <textarea class="form-control" rows="2" placeholder="e.g. 16GB RAM, 512GB SSD, i7 CPU" @bind="SelectedAssetSpecs"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">TeamViewer ID</label>
+                            <input type="text" class="form-control" @bind="SelectedAssetTeamViewer" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">AnyDesk ID</label>
+                            <input type="text" class="form-control" @bind="SelectedAssetAnyDesk" />
+                        </div>
+                    </div>
+                    
+                    @if (SelectedAsset.Status == "In Repair")
+                    {
+                        <div class="mb-3">
+                            <label class="form-label text-warning"><i class="bi bi-exclamation-triangle"></i> Maintenance Note</label>
+                            <textarea class="form-control" @bind="MaintenanceNote" placeholder="Describe the issue..."></textarea>
+                        </div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Upload Documents/Images (Max 10MB each)</label>
+                        <InputFile OnChange="@LoadFiles" class="form-control" accept=".pdf,.png,.jpg,.jpeg" multiple />
+                        @if (uploadedFiles.Any())
+                        {
+                            <small class="text-success d-block mt-1">Ready to upload @uploadedFiles.Count files</small>
+                        }
+                        
+                        @if (SelectedAsset.Documents != null && SelectedAsset.Documents.Any())
+                        {
+                            <div class="row mt-4">
+                                @foreach (var doc in SelectedAsset.Documents.ToList())
+                                {
+                                    <div class="col-md-6 mb-3 position-relative">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="form-label text-muted fw-bold mb-0 text-truncate" style="max-width: 80%;">@doc.FileName</label>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteDocument(doc)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                        @if (doc.FilePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <embed src="/uploads/@doc.FilePath" type="application/pdf" width="100%" height="250px" class="border rounded shadow-sm" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-body-secondary border rounded shadow-sm p-2 d-flex align-items-center justify-content-center" style="height: 250px;">
+                                                <img src="/uploads/@doc.FilePath" class="img-fluid rounded" style="max-height: 100%; object-fit: contain;" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveChanges">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (NewAsset != null)
+{
+    <!-- Add Asset Modal -->
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Asset</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Asset Tag <span class="text-muted">(Auto-generated)</span></label>
+                            <input type="text" class="form-control" @bind="NewAsset.AssetTag" readonly disabled />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Device Type</label>
+                            <input type="text" class="form-control" @bind="NewAsset.DeviceType" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Make/Model</label>
+                            <input type="text" class="form-control" @bind="NewAsset.MakeModel" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" @bind="NewAsset.Status">
+                                <option value="Active">Active</option>
+                                <option value="In Repair">In Repair</option>
+                                <option value="Decommissioned">Decommissioned</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">MAC Address</label>
+                            <input type="text" class="form-control" @bind="NewAsset.MacAddress" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">IP Address</label>
+                            <input type="text" class="form-control" @bind="NewAsset.IpAddress" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Branch</label>
+                            <select class="form-select" @bind="NewAsset.BranchId">
+                                <option value="">-- Select Branch --</option>
+                                @if (AllBranches != null)
+                                {
+                                    @foreach (var b in AllBranches)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" @bind="NewAsset.DepartmentId">
+                                <option value="">-- Select Department --</option>
+                                @if (AllDepartments != null)
+                                {
+                                    @foreach (var d in AllDepartments)
+                                    {
+                                        <option value="@d.Id">@d.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assigned User</label>
+                        <select class="form-select" @bind="NewAsset.UserId">
+                            <option value="">-- Unassigned --</option>
+                            @if (AllUsers != null)
+                            {
+                                @foreach (var user in AllUsers)
+                                {
+                                    <option value="@user.Id">@user.Name (@user.Email)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Purchase Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" @bind="NewAsset.PurchasePrice" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Warranty Expiration</label>
+                            <input type="date" class="form-control" @bind="NewAsset.WarrantyExpiration" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hardware Specs</label>
+                        <textarea class="form-control" rows="2" placeholder="e.g. 16GB RAM, 512GB SSD, i7 CPU" @bind="NewAssetSpecs"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">TeamViewer ID</label>
+                            <input type="text" class="form-control" @bind="NewAssetTeamViewer" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">AnyDesk ID</label>
+                            <input type="text" class="form-control" @bind="NewAssetAnyDesk" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Upload Documents/Images (Max 10MB each)</label>
+                        <InputFile OnChange="@LoadFiles" class="form-control" accept=".pdf,.png,.jpg,.jpeg" multiple />
+                        @if (uploadedFiles.Any())
+                        {
+                            <small class="text-success d-block mt-1">Ready to upload @uploadedFiles.Count files</small>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAddModal">Cancel</button>
+                    <button type="button" class="btn btn-success" @onclick="SaveNewAsset">Add Asset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (AssetToPrint != null)
+{
+    <!-- Print Label Modal -->
+    <div class="modal fade show d-block d-print-none" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Print Asset Tag</h5>
+                    <button type="button" class="btn-close" @onclick="ClosePrintModal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="data:image/png;base64,@QRBase64" class="img-fluid mb-2" />
+                    <h4>@AssetToPrint.AssetTag</h4>
+                    <p class="text-muted mb-0">@AssetToPrint.MakeModel</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" @onclick="ClosePrintModal">Close</button>
+                    <a href="data:image/png;base64,@QRBase64" download="QRCode_@(AssetToPrint.AssetTag).png" class="btn btn-success">Download Image</a>
+                    <button type="button" class="btn btn-primary" onclick="window.print()">Print Label</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Printable Area (Hidden normally, shown only on print) -->
+    <div class="d-none d-print-flex flex-row align-items-center justify-content-center print-container" style="width: 40mm; height: 30mm; position: absolute; top: 0; left: 0; background: white; z-index: 9999; padding: 1.5mm; box-sizing: border-box; overflow: hidden; margin: 0;">
+        <img src="data:image/png;base64,@QRBase64" style="width: 26mm; height: 26mm; object-fit: contain; margin-left: 0.5mm;" />
+        <div style="margin-left: 2mm; display: flex; flex-direction: column; justify-content: center; overflow: hidden; width: 10mm;">
+            <h1 style="margin: 0 0 2px 0; font-family: sans-serif; font-size: 9pt; font-weight: bold; color: black; line-height: 1;">@AssetToPrint.AssetTag</h1>
+            <p style="margin: 0; font-family: sans-serif; font-size: 6pt; color: black; line-height: 1.1; word-wrap: break-word; font-weight: 500;">@AssetToPrint.MakeModel</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private ItAssets.Services.FileStorageService FileStorage { get; set; } = default!;
+
+    private List<Asset>? AllAssets;
+    private List<Asset>? FilteredAssets;
+    private List<ApplicationUser>? AllUsers;
+    private List<Branch>? AllBranches;
+    private List<Department>? AllDepartments;
+
+    [SupplyParameterFromQuery(Name = "search")]
+    public string? SearchQueryParam { get; set; }
+
+    private string SearchQuery = "";
+    private Asset? SelectedAsset;
+    private Asset? NewAsset;
+    private string NewAssetSpecs = "";
+    private string NewAssetTeamViewer = "";
+    private string NewAssetAnyDesk = "";
+    private string MaintenanceNote = "";
+    private IReadOnlyList<IBrowserFile> uploadedFiles = new List<IBrowserFile>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchQueryParam))
+        {
+            SearchQuery = SearchQueryParam;
+        }
+        await LoadAssets();
+    }
+
+    private async Task LoadAssets()
+    {
+        AllAssets = await DbContext.Assets
+            .Include(a => a.User)
+            .Include(a => a.Documents)
+            .OrderByDescending(a => a.Id)
+            .ToListAsync();
+        
+        AllUsers = await DbContext.Users.ToListAsync();
+        AllBranches = await DbContext.Branches.ToListAsync();
+        AllDepartments = await DbContext.Departments.ToListAsync();
+        
+        FilterAssets();
+    }
+
+    private void FilterAssets()
+    {
+        if (AllAssets == null) return;
+
+        if (string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            FilteredAssets = AllAssets;
+        }
+        else
+        {
+            var q = SearchQuery.ToLower();
+            FilteredAssets = AllAssets.Where(a => 
+                a.AssetTag.ToLower().Contains(q) || 
+                a.IpAddress.ToLower().Contains(q) || 
+                (a.User != null && a.User.Name.ToLower().Contains(q))
+            ).ToList();
+        }
+    }
+
+    private string ExtractDetail(string json, string key)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(json)) return "";
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty(key, out var prop))
+            {
+                return prop.GetString() ?? "";
+            }
+        }
+        catch { }
+        return "";
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Active" => "bg-success",
+            "In Repair" => "bg-warning text-dark",
+            "Decommissioned" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string SelectedAssetSpecs = "";
+    private string SelectedAssetTeamViewer = "";
+    private string SelectedAssetAnyDesk = "";
+
+    private void OpenModal(Asset asset)
+    {
+        SelectedAsset = asset;
+        SelectedAssetSpecs = ExtractDetail(asset.Details, "Specs");
+        SelectedAssetTeamViewer = ExtractDetail(asset.Details, "TeamViewerId");
+        SelectedAssetAnyDesk = ExtractDetail(asset.Details, "AnyDeskId");
+    }
+
+    private void CloseModal()
+    {
+        SelectedAsset = null;
+        uploadedFiles = new List<IBrowserFile>();
+    }
+
+    private async Task OpenAddModal()
+    {
+        string nextTag = "AST-0001";
+        
+        var astAssets = await DbContext.Assets
+            .Where(a => a.AssetTag.StartsWith("AST-"))
+            .ToListAsync();
+            
+        if (astAssets.Any())
+        {
+            int maxNumber = 0;
+            foreach(var a in astAssets)
+            {
+                if (a.AssetTag.Length >= 8 && int.TryParse(a.AssetTag.Substring(4), out int num))
+                {
+                    if (num > maxNumber) maxNumber = num;
+                }
+            }
+            if (maxNumber > 0)
+            {
+                nextTag = $"AST-{(maxNumber + 1):D4}";
+            }
+        }
+        
+        NewAsset = new Asset { Status = "Active", AssetTag = nextTag };
+    }
+
+    private void CloseAddModal()
+    {
+        NewAsset = null;
+        uploadedFiles = new List<IBrowserFile>();
+    }
+
+    private Asset? AssetToPrint;
+    private string QRBase64 = "";
+
+    private void OpenPrintModal(Asset asset)
+    {
+        AssetToPrint = asset;
+        var appUrl = NavManager.ToAbsoluteUri($"/assets?search={asset.AssetTag}").ToString();
+        var qrContent = $"Asset Tag: {asset.AssetTag}\nURL: {appUrl}";
+        QRBase64 = GenerateQRCodeBase64(qrContent);
+    }
+
+    private void ClosePrintModal()
+    {
+        AssetToPrint = null;
+        QRBase64 = "";
+    }
+
+    private string GenerateQRCodeBase64(string text)
+    {
+        using QRCodeGenerator qrGenerator = new QRCodeGenerator();
+        using QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+        using PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+        byte[] qrCodeImage = qrCode.GetGraphic(20);
+        return Convert.ToBase64String(qrCodeImage);
+    }
+
+    private async Task SaveNewAsset()
+    {
+        if (NewAsset != null && !string.IsNullOrWhiteSpace(NewAsset.AssetTag))
+        {
+            if (!string.IsNullOrWhiteSpace(NewAssetSpecs) || !string.IsNullOrWhiteSpace(NewAssetTeamViewer) || !string.IsNullOrWhiteSpace(NewAssetAnyDesk))
+            {
+                NewAsset.Details = System.Text.Json.JsonSerializer.Serialize(new 
+                { 
+                    Specs = NewAssetSpecs,
+                    TeamViewerId = NewAssetTeamViewer,
+                    AnyDeskId = NewAssetAnyDesk
+                });
+            }
+
+            DbContext.Assets.Add(NewAsset);
+            await DbContext.SaveChangesAsync();
+            
+            if (uploadedFiles.Any())
+            {
+                var maxAllowedSize = 10 * 1024 * 1024; // 10 MB
+                foreach(var file in uploadedFiles)
+                {
+                    if (file.Size <= maxAllowedSize)
+                    {
+                        try
+                        {
+                            var relativePath = await FileStorage.SaveFileAsync(file);
+                            DbContext.AssetDocuments.Add(new AssetDocument
+                            {
+                                AssetId = NewAsset.Id,
+                                FileName = file.Name,
+                                FilePath = relativePath,
+                                DocumentType = "Document"
+                            });
+                        }
+                        catch { }
+                    }
+                }
+                await DbContext.SaveChangesAsync();
+            }
+
+            await LoadAssets();
+            NewAsset = null;
+            NewAssetSpecs = "";
+            NewAssetTeamViewer = "";
+            NewAssetAnyDesk = "";
+            uploadedFiles = new List<IBrowserFile>();
+        }
+    }
+
+    private void LoadFiles(InputFileChangeEventArgs e)
+    {
+        uploadedFiles = e.GetMultipleFiles(10);
+    }
+
+    private async Task DeleteDocument(AssetDocument doc)
+    {
+        DbContext.AssetDocuments.Remove(doc);
+        await DbContext.SaveChangesAsync();
+        SelectedAsset?.Documents.Remove(doc);
+    }
+
+    private async Task SaveChanges()
+    {
+        if (SelectedAsset != null)
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedAssetSpecs) || !string.IsNullOrWhiteSpace(SelectedAssetTeamViewer) || !string.IsNullOrWhiteSpace(SelectedAssetAnyDesk))
+            {
+                SelectedAsset.Details = System.Text.Json.JsonSerializer.Serialize(new 
+                { 
+                    Specs = SelectedAssetSpecs,
+                    TeamViewerId = SelectedAssetTeamViewer,
+                    AnyDeskId = SelectedAssetAnyDesk
+                });
+            }
+
+            DbContext.Assets.Update(SelectedAsset);
+            
+            if (SelectedAsset.Status == "In Repair" && !string.IsNullOrWhiteSpace(MaintenanceNote))
+            {
+                DbContext.MaintenanceLogs.Add(new MaintenanceLog
+                {
+                    AssetId = SelectedAsset.Id,
+                    IssueDescription = MaintenanceNote,
+                    Status = "Open"
+                });
+                MaintenanceNote = "";
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            if (uploadedFiles.Any())
+            {
+                var maxAllowedSize = 10 * 1024 * 1024; // 10 MB
+                foreach(var file in uploadedFiles)
+                {
+                    if (file.Size <= maxAllowedSize)
+                    {
+                        try
+                        {
+                            var relativePath = await FileStorage.SaveFileAsync(file);
+                            DbContext.AssetDocuments.Add(new AssetDocument
+                            {
+                                AssetId = SelectedAsset.Id,
+                                FileName = file.Name,
+                                FilePath = relativePath,
+                                DocumentType = "Document"
+                            });
+                        }
+                        catch { }
+                    }
+                }
+                await DbContext.SaveChangesAsync();
+                uploadedFiles = new List<IBrowserFile>();
+            }
+
+            await LoadAssets();
+            SelectedAsset = null;
+        }
+    }
+}

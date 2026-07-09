@@ -1,0 +1,138 @@
+@page "/import"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using ItAssets.Services
+@using ItAssets.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Text
+@inject BulkImportService ImportService
+@inject ApplicationDbContext DbContext
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Bulk Import & Export</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-0 mt-5">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Bulk Import & Export Assets</h4>
+                <button class="btn btn-light btn-sm fw-bold text-primary" @onclick="ExportCsv" disabled="@IsExporting">
+                    @if (IsExporting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <span>Exporting...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-file-earmark-excel"></i> <span>Export to CSV</span>
+                    }
+                </button>
+            </div>
+            <div class="card-body p-5">
+                <p class="text-muted mb-4">Upload a CSV file containing asset data. The system will parse the file and insert new records into the database.</p>
+
+                <div class="mb-3">
+                    <InputFile OnChange="HandleFileSelected" class="form-control form-control-lg" accept=".csv" />
+                </div>
+
+                @if (IsUploading)
+                {
+                    <div class="progress mt-4">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Message))
+                {
+                    <div class="alert @AlertClass mt-4" role="alert">
+                        @Message
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool IsUploading = false;
+    private bool IsExporting = false;
+    private string Message = string.Empty;
+    private string AlertClass = "alert-info";
+
+    private async Task ExportCsv()
+    {
+        IsExporting = true;
+        StateHasChanged();
+        
+        try
+        {
+            var assets = await DbContext.Assets.Include(a => a.User).ToListAsync();
+            var csvBuilder = new StringBuilder();
+            
+            // CSV Header
+            csvBuilder.AppendLine("AssetTag,DeviceType,MakeModel,Status,UserName,UserEmail");
+            
+            // CSV Rows
+            foreach(var a in assets)
+            {
+                var tag = a.AssetTag?.Replace(",", "") ?? "";
+                var type = a.DeviceType?.Replace(",", "") ?? "";
+                var make = a.MakeModel?.Replace(",", "") ?? "";
+                var status = a.Status?.Replace(",", "") ?? "";
+                var uName = a.User?.Name?.Replace(",", "") ?? "-- Unassigned --";
+                var uEmail = a.User?.Email?.Replace(",", "") ?? "";
+
+                csvBuilder.AppendLine($"{tag},{type},{make},{status},{uName},{uEmail}");
+            }
+            
+            var bytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64 = Convert.ToBase64String(bytes);
+            
+            await JSRuntime.InvokeVoidAsync("downloadFileFromBase64", "AssetRegister.csv", base64);
+            
+            Message = "Successfully exported the asset register.";
+            AlertClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error exporting file: {ex.Message}";
+            AlertClass = "alert-danger";
+        }
+        finally
+        {
+            IsExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        IsUploading = true;
+        Message = "Processing file...";
+        AlertClass = "alert-info";
+        StateHasChanged();
+
+        try
+        {
+            // Max 10 MB limit for stream upload
+            using var stream = file.OpenReadStream(10 * 1024 * 1024);
+            int count = await ImportService.ImportAssetsAsync(stream);
+
+            Message = $"Successfully imported {count} new assets.";
+            AlertClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error importing file: {ex.Message}";
+            AlertClass = "alert-danger";
+        }
+        finally
+        {
+            IsUploading = false;
+            StateHasChanged();
+        }
+    }
+}
