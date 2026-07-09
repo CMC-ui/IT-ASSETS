@@ -99,6 +99,17 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Departments.Add(new Department { Name = "OTHER" });
     }
+
+    var newDepartments = new[] { "FLEET-FLEX", "ADMIN", "FINANCE" };
+    foreach (var dept in newDepartments)
+    {
+        var existing = dbContext.Departments.FirstOrDefault(d => d.Name == dept);
+        if (existing == null)
+        {
+            dbContext.Departments.Add(new Department { Name = dept });
+        }
+    }
+
     dbContext.SaveChanges();
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
