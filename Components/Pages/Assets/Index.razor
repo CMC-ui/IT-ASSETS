@@ -570,8 +570,7 @@
     {
         AssetToPrint = asset;
         var appUrl = NavManager.ToAbsoluteUri($"/assets?search={asset.AssetTag}").ToString();
-        var qrContent = $"Asset Tag: {asset.AssetTag}\nURL: {appUrl}";
-        QRBase64 = GenerateQRCodeBase64(qrContent);
+        QRBase64 = GenerateQRCodeBase64(appUrl);
     }
 
     private void ClosePrintModal()
