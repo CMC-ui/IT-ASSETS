@@ -271,4 +271,10 @@ tr:hover {
 }
 [data-bs-theme="matrix"] .bg-light {
     background-color: #0d0d0d !important;
+}
+[data-bs-theme="matrix"] .table thead {
+    background-color: transparent !important;
+}
+[data-bs-theme="matrix"] .table thead th {
+    color: red !important;
 }
