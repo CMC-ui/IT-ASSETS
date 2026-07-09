@@ -74,6 +74,19 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
 
+    var otherBranch = dbContext.Branches.FirstOrDefault(b => b.Name == "OTHER");
+    if (otherBranch == null)
+    {
+        dbContext.Branches.Add(new Branch { Name = "OTHER" });
+    }
+
+    var otherDept = dbContext.Departments.FirstOrDefault(d => d.Name == "OTHER");
+    if (otherDept == null)
+    {
+        dbContext.Departments.Add(new Department { Name = "OTHER" });
+    }
+    dbContext.SaveChanges();
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var roles = new[] { "Admin", "Technician", "Standard User" };
     foreach (var role in roles)

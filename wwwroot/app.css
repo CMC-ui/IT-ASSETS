@@ -280,4 +280,11 @@ tr:hover {
 }
 [data-bs-theme="matrix"] .modal-title {
     color: red !important;
+}
+[data-bs-theme="matrix"] .form-select option:checked,
+[data-bs-theme="matrix"] .form-select option:hover,
+[data-bs-theme="matrix"] .form-select option:focus {
+    background-color: red !important;
+    background: red !important;
+    color: #fff !important;
 }
