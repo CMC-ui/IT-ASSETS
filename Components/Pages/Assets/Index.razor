@@ -65,7 +65,7 @@
                                 <td>@asset.IpAddress</td>
                                 <td>@asset.Branch?.Name</td>
                                 <td>@asset.Department?.Name</td>
-                                <td>@asset.PurchasePrice.ToString("C")</td>
+                                <td>@asset.PurchasePrice.ToString("C", new System.Globalization.CultureInfo("en-US"))</td>
                                 <td>@asset.WarrantyExpiration?.ToString("yyyy-MM-dd")</td>
                                 <td>@ExtractDetail(asset.Details, "Specs")</td>
                                 <td>@ExtractDetail(asset.Details, "TeamViewerId")</td>
