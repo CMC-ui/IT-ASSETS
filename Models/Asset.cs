@@ -41,6 +41,8 @@ public class Asset
     [MaxLength(50)]
     public string Status { get; set; } = "Active"; // Active, In Repair, Decommissioned
 
+    public bool UserSignedHandover { get; set; } = false;
+
     public string? UserId { get; set; }
     public ApplicationUser? User { get; set; }
 
