@@ -88,6 +88,12 @@ using (var scope = app.Services.CreateScope())
         dbContext.Branches.Add(new Branch { Name = "OTHER" });
     }
 
+    var fleetFlexBranch = dbContext.Branches.FirstOrDefault(b => b.Name == "FLEET-FLEX");
+    if (fleetFlexBranch == null)
+    {
+        dbContext.Branches.Add(new Branch { Name = "FLEET-FLEX" });
+    }
+
     var otherDept = dbContext.Departments.FirstOrDefault(d => d.Name == "OTHER");
     if (otherDept == null)
     {
