@@ -71,6 +71,9 @@ app.MapRazorComponents<App>()
 
 using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var roles = new[] { "Admin", "Technician", "Standard User" };
     foreach (var role in roles)
@@ -108,9 +111,6 @@ using (var scope = app.Services.CreateScope())
         rootUser.UserName = "trevor@system.local";
         await userManager.UpdateAsync(rootUser);
     }
-
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
     
     if (!dbContext.Users.Any(u => u.Name != "Trevor"))
     {
