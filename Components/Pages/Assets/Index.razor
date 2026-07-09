@@ -282,7 +282,13 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Payment Method</label>
-                            <input type="text" class="form-control" @bind="SelectedAsset.PaymentMethod" placeholder="e.g. EFT, Card" />
+                            <select class="form-select" @bind="SelectedAsset.PaymentMethod">
+                                <option value="">-- Select --</option>
+                                <option value="EFT">EFT</option>
+                                <option value="CREDIT CARD">CREDIT CARD</option>
+                                <option value="CASH">CASH</option>
+                                <option value="DEBIT ORDER">DEBIT ORDER</option>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Warranty Expiration</label>
@@ -463,7 +469,13 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Payment Method</label>
-                            <input type="text" class="form-control" @bind="NewAsset.PaymentMethod" placeholder="e.g. EFT, Card" />
+                            <select class="form-select" @bind="NewAsset.PaymentMethod">
+                                <option value="">-- Select --</option>
+                                <option value="EFT">EFT</option>
+                                <option value="CREDIT CARD">CREDIT CARD</option>
+                                <option value="CASH">CASH</option>
+                                <option value="DEBIT ORDER">DEBIT ORDER</option>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Warranty Expiration</label>
