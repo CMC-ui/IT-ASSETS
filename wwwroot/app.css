@@ -194,4 +194,74 @@ tr:hover {
         size: 40mm 30mm;
         margin: 0; /* Remove headers/footers */
     }
+}
+
+/* Matrix Theme Styles */
+[data-bs-theme="matrix"] body {
+    background: #000000;
+    color: #00FF41;
+    font-family: "Courier New", Courier, monospace;
+}
+[data-bs-theme="matrix"] .sidebar {
+    background: #0d0d0d;
+    border-right: 1px solid #008F11;
+}
+[data-bs-theme="matrix"] .top-row {
+    background: #000000;
+    border-bottom: 1px solid #008F11;
+}
+[data-bs-theme="matrix"] .card {
+    background: #000000;
+    border: 1px solid #008F11;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+[data-bs-theme="matrix"] .card:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.6);
+}
+[data-bs-theme="matrix"] .table {
+    color: #00FF41;
+}
+[data-bs-theme="matrix"] .table-hover tbody tr:hover {
+    background-color: rgba(0, 255, 65, 0.1) !important;
+}
+[data-bs-theme="matrix"] th, [data-bs-theme="matrix"] td {
+    border-color: #003B00;
+}
+[data-bs-theme="matrix"] .btn-primary {
+    background-color: #000;
+    color: #00FF41;
+    border-color: #00FF41;
+}
+[data-bs-theme="matrix"] .btn-primary:hover {
+    background-color: #00FF41;
+    color: #000;
+}
+[data-bs-theme="matrix"] .btn-outline-secondary, [data-bs-theme="matrix"] .btn-outline-primary {
+    color: #00FF41;
+    border-color: #008F11;
+}
+[data-bs-theme="matrix"] .btn-outline-secondary:hover, [data-bs-theme="matrix"] .btn-outline-primary:hover {
+    background-color: #008F11;
+    color: #000;
+}
+[data-bs-theme="matrix"] .form-control, [data-bs-theme="matrix"] .form-select {
+    background-color: #000;
+    color: #00FF41;
+    border-color: #008F11;
+}
+[data-bs-theme="matrix"] .form-control:focus, [data-bs-theme="matrix"] .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 255, 65, 0.25);
+    border-color: #00FF41;
+    color: #00FF41;
+}
+[data-bs-theme="matrix"] .modal-content {
+    background: #000;
+    border: 1px solid #00FF41;
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
+}
+[data-bs-theme="matrix"] .text-muted {
+    color: #008F11 !important;
+}
+[data-bs-theme="matrix"] .bg-light {
+    background-color: #0d0d0d !important;
 }

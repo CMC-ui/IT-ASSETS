@@ -52,11 +52,13 @@
                 </NotAuthorized>
             </AuthorizeView>
 
-            <div class="nav-item px-4 mt-2 mb-3 d-flex align-items-center justify-content-between">
-                <span style="color: #d7d7d7; font-size: 0.9rem;"><i class="bi bi-moon-stars-fill text-warning me-2"></i>Theme</span>
-                <div class="form-check form-switch m-0 p-0 d-flex align-items-center">
-                    <input class="form-check-input ms-0 mt-0" type="checkbox" role="switch" id="themeToggleSwitch" onchange="toggleTheme()" style="cursor: pointer; width: 2.2em; height: 1.1em; background-color: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.1);">
-                </div>
+            <div class="nav-item px-4 mt-2 mb-3 d-flex flex-column">
+                <span style="color: #d7d7d7; font-size: 0.9rem; margin-bottom: 5px;"><i class="bi bi-palette-fill text-info me-2"></i>Theme</span>
+                <select id="themeSelect" class="form-select form-select-sm bg-transparent text-white border-secondary" onchange="changeTheme(this.value)">
+                    <option value="light" style="color: black;">☀️ Light</option>
+                    <option value="dark" style="color: black;">🌙 Dark</option>
+                    <option value="matrix" style="color: black;">👾 Matrix</option>
+                </select>
             </div>
         </div>
     </nav>

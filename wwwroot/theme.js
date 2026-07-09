@@ -9,20 +9,20 @@ function getPreferredTheme() {
 }
 
 function setTheme(theme) {
-    const isDark = theme === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : theme === 'dark';
-    document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+    if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-bs-theme', theme);
     
-    const toggleSwitch = document.getElementById('themeToggleSwitch');
-    if (toggleSwitch) {
-        toggleSwitch.checked = isDark;
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        themeSelect.value = theme;
     }
 }
 
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-bs-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    localStorage.setItem(THEME_KEY, next);
-    setTheme(next);
+function changeTheme(theme) {
+    localStorage.setItem(THEME_KEY, theme);
+    setTheme(theme);
 }
 
 // Apply immediately on script load to prevent flashing
