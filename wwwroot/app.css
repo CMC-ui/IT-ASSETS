@@ -284,7 +284,7 @@ tr:hover {
 [data-bs-theme="matrix"] .form-select option:checked,
 [data-bs-theme="matrix"] .form-select option:hover,
 [data-bs-theme="matrix"] .form-select option:focus {
-    background-color: red !important;
-    background: red !important;
-    color: #fff !important;
+    background-color: #00FF41 !important;
+    background: #00FF41 !important;
+    color: #000 !important;
 }
