@@ -287,4 +287,9 @@ tr:hover {
     background-color: #00FF41 !important;
     background: #00FF41 !important;
     color: #000 !important;
+}
+[data-bs-theme="matrix"] .input-group-text {
+    background-color: transparent;
+    border-color: #00FF41;
+    color: #00FF41;
 }
