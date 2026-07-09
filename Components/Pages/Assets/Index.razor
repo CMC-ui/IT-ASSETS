@@ -96,8 +96,32 @@
                 <tr><th>Hardware Specs</th><td>@SelectedAssetSpecs</td></tr>
                 <tr><th>TeamViewer ID</th><td>@SelectedAssetTeamViewer</td></tr>
                 <tr><th>AnyDesk ID</th><td>@SelectedAssetAnyDesk</td></tr>
+                <tr><th>Branch</th><td>@(AllBranches?.FirstOrDefault(b => b.Id == SelectedAsset.BranchId)?.Name)</td></tr>
+                <tr><th>Department</th><td>@(AllDepartments?.FirstOrDefault(d => d.Id == SelectedAsset.DepartmentId)?.Name)</td></tr>
+                <tr><th>Assigned User</th><td>@(AllUsers?.FirstOrDefault(u => u.Id == SelectedAsset.UserId)?.Name)</td></tr>
             </tbody>
         </table>
+
+        @if (SelectedAsset.Documents != null && SelectedAsset.Documents.Any())
+        {
+            <h4 class="mt-4 mb-3">Attached Documents/Images</h4>
+            <div class="row">
+                @foreach (var doc in SelectedAsset.Documents)
+                {
+                    <div class="col-6 mb-4 text-center">
+                        <p class="mb-2 fw-bold text-truncate">@doc.FileName</p>
+                        @if (doc.FilePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <div class="p-4 border rounded bg-light">[PDF Document - Not rendered in print view]</div>
+                        }
+                        else
+                        {
+                            <img src="/uploads/@doc.FilePath" class="img-fluid border rounded" style="max-height: 250px; object-fit: contain;" />
+                        }
+                    </div>
+                }
+            </div>
+        }
     </div>
     <!-- Quick Manage Modal -->
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
@@ -592,6 +616,7 @@
             var printContents = document.getElementById('printAssetData').innerHTML;
             var myWindow = window.open('', '', 'width=800,height=800');
             myWindow.document.write('<html><head><title>Print Asset</title>');
+            myWindow.document.write('<base href=""' + window.location.origin + '"">');
             myWindow.document.write('<link href=""/lib/bootstrap/dist/css/bootstrap.min.css"" rel=""stylesheet"">');
             myWindow.document.write('<style>body{padding:40px; font-family: sans-serif;}</style>');
             myWindow.document.write('</head><body>');
