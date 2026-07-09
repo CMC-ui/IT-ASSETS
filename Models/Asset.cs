@@ -36,6 +36,9 @@ public class Asset
     public DateTime? WarrantyExpiration { get; set; }
 
     [MaxLength(50)]
+    public string PaymentMethod { get; set; } = string.Empty;
+
+    [MaxLength(50)]
     public string Status { get; set; } = "Active"; // Active, In Repair, Decommissioned
 
     public string? UserId { get; set; }
