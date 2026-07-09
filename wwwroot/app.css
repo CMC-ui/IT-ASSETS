@@ -212,7 +212,7 @@ tr:hover {
 }
 [data-bs-theme="matrix"] .card {
     background: #000000;
-    border: 1px solid #008F11;
+    border: 1px solid red !important;
     box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
 }
 [data-bs-theme="matrix"] .card:hover {
