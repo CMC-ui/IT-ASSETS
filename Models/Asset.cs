@@ -18,6 +18,11 @@ public class Asset
     [MaxLength(100)]
     public string MakeModel { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string Supplier { get; set; } = string.Empty;
+
+    public DateTime? DateReceived { get; set; }
+
     [MaxLength(50)]
     public string MacAddress { get; set; } = string.Empty;
 

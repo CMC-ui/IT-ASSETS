@@ -96,6 +96,8 @@
                 <tr><th>Hardware Specs</th><td>@SelectedAssetSpecs</td></tr>
                 <tr><th>TeamViewer ID</th><td>@SelectedAssetTeamViewer</td></tr>
                 <tr><th>AnyDesk ID</th><td>@SelectedAssetAnyDesk</td></tr>
+                <tr><th>Supplier</th><td>@SelectedAsset.Supplier</td></tr>
+                <tr><th>Date Received</th><td>@SelectedAsset.DateReceived?.ToString("yyyy-MM-dd")</td></tr>
                 <tr><th>Branch</th><td>@(AllBranches?.FirstOrDefault(b => b.Id == SelectedAsset.BranchId)?.Name)</td></tr>
                 <tr><th>Department</th><td>@(AllDepartments?.FirstOrDefault(d => d.Id == SelectedAsset.DepartmentId)?.Name)</td></tr>
                 <tr><th>Assigned User</th><td>@(AllUsers?.FirstOrDefault(u => u.Id == SelectedAsset.UserId)?.Name)</td></tr>
@@ -154,6 +156,16 @@
                                 <option value="In Repair">In Repair</option>
                                 <option value="Decommissioned">Decommissioned</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Supplier</label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.Supplier" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date Received</label>
+                            <input type="date" class="form-control" @bind="SelectedAsset.DateReceived" />
                         </div>
                     </div>
                     <div class="row">
@@ -321,6 +333,16 @@
                                 <option value="In Repair">In Repair</option>
                                 <option value="Decommissioned">Decommissioned</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Supplier</label>
+                            <input type="text" class="form-control" @bind="NewAsset.Supplier" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date Received</label>
+                            <input type="date" class="form-control" @bind="NewAsset.DateReceived" />
                         </div>
                     </div>
                     <div class="row">
