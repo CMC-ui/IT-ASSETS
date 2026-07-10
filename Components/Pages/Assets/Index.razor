@@ -15,7 +15,7 @@
     <div class="card-body">
         <div class="row mb-3">
             <div class="col-md-6 d-flex">
-                <input type="text" class="form-control me-2" placeholder="Search by Asset Tag, IP, or User..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterAssets" />
+                <input type="text" class="form-control me-2" placeholder="Search by Asset Tag, SN, IP, or User..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterAssets" />
                 <div class="btn-group" role="group">
                     <input type="radio" class="btn-check" name="viewToggle" id="listView" autocomplete="off" checked="@(!IsCardView)" @onchange="@(() => IsCardView = false)">
                     <label class="btn btn-outline-secondary" for="listView"><i class="bi bi-list-ul"></i></label>
@@ -642,6 +642,7 @@
             FilteredAssets = AllAssets.Where(a => 
                 a.AssetTag.ToLower().Contains(q) || 
                 a.IpAddress.ToLower().Contains(q) || 
+                a.SerialNumber.ToLower().Contains(q) ||
                 (a.User != null && a.User.Name.ToLower().Contains(q))
             ).ToList();
         }
