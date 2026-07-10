@@ -19,6 +19,9 @@ public class Asset
     public string MakeModel { get; set; } = string.Empty;
 
     [MaxLength(100)]
+    public string SerialNumber { get; set; } = string.Empty;
+
+    [MaxLength(100)]
     public string Supplier { get; set; } = string.Empty;
 
     public DateTime? DateReceived { get; set; }

@@ -147,6 +147,7 @@
             <tbody>
                 <tr><th style="width: 30%">Device Type</th><td>@SelectedAsset.DeviceType</td></tr>
                 <tr><th>Make/Model</th><td>@SelectedAsset.MakeModel</td></tr>
+                <tr><th>Serial Number</th><td>@SelectedAsset.SerialNumber</td></tr>
                 <tr><th>Status</th><td>@SelectedAsset.Status</td></tr>
                 <tr><th>MAC Address</th><td>@SelectedAsset.MacAddress</td></tr>
                 <tr><th>IP Address</th><td>@SelectedAsset.IpAddress</td></tr>
@@ -204,11 +205,15 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Make/Model</label>
                             <input type="text" class="form-control" @bind="SelectedAsset.MakeModel" />
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Serial Number</label>
+                            <input type="text" class="form-control" @bind="SelectedAsset.SerialNumber" />
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
                             <select class="form-select" @bind="SelectedAsset.Status">
                                 <option value="Active">Active</option>
@@ -403,11 +408,15 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Make/Model</label>
                             <input type="text" class="form-control" @bind="NewAsset.MakeModel" />
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Serial Number</label>
+                            <input type="text" class="form-control" @bind="NewAsset.SerialNumber" />
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
                             <select class="form-select" @bind="NewAsset.Status">
                                 <option value="Active">Active</option>
@@ -551,6 +560,7 @@
                     <img src="data:image/png;base64,@QRBase64" class="img-fluid mb-2" />
                     <h4>@AssetToPrint.AssetTag</h4>
                     <p class="text-muted mb-0">@AssetToPrint.MakeModel</p>
+                    <p class="text-muted small mb-0">SN: @AssetToPrint.SerialNumber</p>
                 </div>
                 <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-outline-danger" @onclick="ClosePrintModal">Close</button>
@@ -567,6 +577,7 @@
         <div style="margin-left: 2mm; display: flex; flex-direction: column; justify-content: center; overflow: hidden; width: 10mm;">
             <h1 style="margin: 0 0 2px 0; font-family: sans-serif; font-size: 9pt; font-weight: bold; color: black; line-height: 1;">@AssetToPrint.AssetTag</h1>
             <p style="margin: 0; font-family: sans-serif; font-size: 6pt; color: black; line-height: 1.1; word-wrap: break-word; font-weight: 500;">@AssetToPrint.MakeModel</p>
+            <p style="margin: 0; font-family: sans-serif; font-size: 5pt; color: black; line-height: 1.1; word-wrap: break-word;">SN: @AssetToPrint.SerialNumber</p>
         </div>
     </div>
 }
