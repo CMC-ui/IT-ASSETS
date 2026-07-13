@@ -161,6 +161,7 @@
                 <tr><th>Branch</th><td>@(AllBranches?.FirstOrDefault(b => b.Id == SelectedAsset.BranchId)?.Name)</td></tr>
                 <tr><th>Department</th><td>@(AllDepartments?.FirstOrDefault(d => d.Id == SelectedAsset.DepartmentId)?.Name)</td></tr>
                 <tr><th>Assigned User</th><td>@(AllUsers?.FirstOrDefault(u => u.Id == SelectedAsset.UserId)?.Name)</td></tr>
+                <tr><th>Notes</th><td>@SelectedAsset.Notes</td></tr>
             </tbody>
         </table>
 
@@ -324,6 +325,10 @@
                             <label class="form-label">AnyDesk ID</label>
                             <input type="text" class="form-control" @bind="SelectedAssetAnyDesk" />
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">NOTES</label>
+                        <textarea class="form-control" rows="2" placeholder="Enter notes here..." @bind="SelectedAsset.Notes"></textarea>
                     </div>
                     
                     @if (SelectedAsset.Status == "In Repair")
@@ -527,6 +532,10 @@
                             <label class="form-label">AnyDesk ID</label>
                             <input type="text" class="form-control" @bind="NewAssetAnyDesk" />
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">NOTES</label>
+                        <textarea class="form-control" rows="2" placeholder="Enter notes here..." @bind="NewAsset.Notes"></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Upload Documents/Images (Max 10MB each)</label>

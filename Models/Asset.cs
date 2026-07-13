@@ -57,5 +57,7 @@ public class Asset
 
     public bool IsDeleted { get; set; } = false;
 
+    public string Notes { get; set; } = string.Empty;
+
     public ICollection<AssetDocument> Documents { get; set; } = new List<AssetDocument>();
 }
