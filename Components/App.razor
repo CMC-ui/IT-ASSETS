@@ -21,6 +21,9 @@
     <ReconnectModal />
     <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="js/signature.js"></script>
+    <script src="js/scanner.js"></script>
     <script>
         Blazor.addEventListener('enhancedload', function () {
             setTheme(getPreferredTheme());

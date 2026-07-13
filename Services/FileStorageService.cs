@@ -34,6 +34,16 @@ public class FileStorageService
         return trustedFileNameForFileStorage;
     }
 
+    public async Task<string> SaveFileAsync(byte[] fileBytes, string fileName)
+    {
+        var trustedFileNameForFileStorage = $"{Guid.NewGuid()}_{Path.GetFileName(fileName)}";
+        var path = Path.Combine(_uploadDirectory, trustedFileNameForFileStorage);
+
+        await File.WriteAllBytesAsync(path, fileBytes);
+
+        return trustedFileNameForFileStorage;
+    }
+
     public void DeleteFile(string fileName)
     {
         if (string.IsNullOrEmpty(fileName)) return;

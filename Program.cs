@@ -5,6 +5,9 @@ using ItAssets.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +38,7 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<BulkImportService>();
+builder.Services.AddScoped<HandoverPdfService>();
 
 var app = builder.Build();
 

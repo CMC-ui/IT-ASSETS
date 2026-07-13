@@ -8,6 +8,7 @@
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
+@inject ItAssets.Services.HandoverPdfService HandoverPdfService
 
 <PageTitle>Assets</PageTitle>
 
@@ -23,6 +24,9 @@
                     <input type="radio" class="btn-check" name="viewToggle" id="cardView" autocomplete="off" checked="@IsCardView" @onchange="@(() => IsCardView = true)">
                     <label class="btn btn-outline-secondary" for="cardView"><i class="bi bi-grid"></i></label>
                 </div>
+                <button class="btn btn-outline-primary ms-2" @onclick="OpenScannerModal">
+                    <i class="bi bi-upc-scan"></i> Scan QR
+                </button>
             </div>
             <div class="col-md-6 text-end">
                 <button class="btn btn-primary shadow-sm" @onclick="OpenAddModal">
@@ -284,9 +288,17 @@
                                 }
                             }
                         </select>
-                        <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="manageSignedHandover" @bind="SelectedAsset.UserSignedHandover">
-                            <label class="form-check-label" for="manageSignedHandover">User Signed Handover (Yes/No)</label>
+                        <div class="form-check form-switch mt-2 d-flex justify-content-between align-items-center">
+                            <div>
+                                <input class="form-check-input" type="checkbox" role="switch" id="manageSignedHandover" @bind="SelectedAsset.UserSignedHandover">
+                                <label class="form-check-label" for="manageSignedHandover">User Signed Handover (Yes/No)</label>
+                            </div>
+                            @if (!string.IsNullOrEmpty(SelectedAsset.UserId))
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-success" @onclick="OpenSignatureModal">
+                                    <i class="bi bi-pen"></i> Generate Handover
+                                </button>
+                            }
                         </div>
                     </div>
                     <div class="row">
@@ -627,6 +639,49 @@
     </div>
 }
 
+@if (IsScannerOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Scan QR Code</h5>
+                    <button type="button" class="btn-close" @onclick="CloseScannerModal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="qr-reader" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (IsSignatureOpen)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Digital Signature</h5>
+                    <button type="button" class="btn-close" @onclick="CloseSignatureModal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>Please sign below:</p>
+                    <div class="border rounded bg-light p-2 mb-3" style="touch-action: none;">
+                        <canvas id="signatureCanvas" width="400" height="200" style="width: 100%; max-width: 400px; height: 200px; border: 1px dashed #ccc; background: #fff;"></canvas>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ClearSignature">Clear Signature</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseSignatureModal">Cancel</button>
+                    <button type="button" class="btn btn-success" @onclick="SaveSignatureAndGeneratePdf">Save & Generate PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
 @code {
     [Inject] private ItAssets.Services.FileStorageService FileStorage { get; set; } = default!;
 
@@ -961,6 +1016,94 @@
                 CloseModal();
             }
         }
+    }
+
+    private bool IsScannerOpen = false;
+    private DotNetObjectReference<Index>? dotNetRef;
+
+    private async Task OpenScannerModal()
+    {
+        IsScannerOpen = true;
+        StateHasChanged();
+        dotNetRef = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeVoidAsync("qrScanner.start", "qr-reader", dotNetRef);
+    }
+
+    private async Task CloseScannerModal()
+    {
+        IsScannerOpen = false;
+        await JSRuntime.InvokeVoidAsync("qrScanner.stop");
+        dotNetRef?.Dispose();
+    }
+
+    [JSInvokable]
+    public async Task OnQrCodeScanned(string decodedText)
+    {
+        await CloseScannerModal();
+        
+        string tag = decodedText;
+        if (decodedText.Contains("search="))
+        {
+            tag = decodedText.Substring(decodedText.IndexOf("search=") + 7);
+        }
+
+        SearchQuery = tag;
+        IsCardView = true;
+        FilterAssets();
+
+        if (FilteredAssets != null && FilteredAssets.Count == 1)
+        {
+            OpenModal(FilteredAssets.First());
+        }
+        
+        StateHasChanged();
+    }
+
+    private bool IsSignatureOpen = false;
+
+    private async Task OpenSignatureModal()
+    {
+        IsSignatureOpen = true;
+        StateHasChanged();
+        await Task.Delay(100);
+        await JSRuntime.InvokeVoidAsync("signaturePad.init", "signatureCanvas");
+    }
+
+    private async Task CloseSignatureModal()
+    {
+        IsSignatureOpen = false;
+    }
+
+    private async Task ClearSignature()
+    {
+        await JSRuntime.InvokeVoidAsync("signaturePad.clear");
+    }
+
+    private async Task SaveSignatureAndGeneratePdf()
+    {
+        var base64Signature = await JSRuntime.InvokeAsync<string>("signaturePad.getImageData");
+        
+        if (SelectedAsset != null)
+        {
+            var pdfBytes = HandoverPdfService.GenerateHandoverPdf(SelectedAsset, base64Signature);
+            
+            var fileName = $"Handover_{SelectedAsset.AssetTag}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            var result = await FileStorage.SaveFileAsync(pdfBytes, fileName);
+            if (result != null)
+            {
+                SelectedAsset.Documents ??= new List<AssetDocument>();
+                SelectedAsset.Documents.Add(new AssetDocument
+                {
+                    FileName = fileName,
+                    FilePath = result
+                });
+                
+                SelectedAsset.UserSignedHandover = true;
+                await SaveChanges();
+            }
+        }
+        
+        await CloseSignatureModal();
     }
 }
 
