@@ -154,7 +154,7 @@
                 <tr><th>Purchase Price</th><td>@SelectedAsset.PurchasePrice.ToString("C", new System.Globalization.CultureInfo("en-US"))</td></tr>
                 <tr><th>Warranty Expiration</th><td>@SelectedAsset.WarrantyExpiration?.ToString("yyyy-MM-dd")</td></tr>
                 <tr><th>Hardware Specs</th><td>@SelectedAssetSpecs</td></tr>
-                <tr><th>TeamViewer ID</th><td>@SelectedAssetTeamViewer</td></tr>
+                <tr><th>RUST DESK ID</th><td>@SelectedAssetRustDesk</td></tr>
                 <tr><th>AnyDesk ID</th><td>@SelectedAssetAnyDesk</td></tr>
                 <tr><th>Supplier</th><td>@SelectedAsset.Supplier</td></tr>
                 <tr><th>Date Received</th><td>@SelectedAsset.DateReceived?.ToString("yyyy-MM-dd")</td></tr>
@@ -318,8 +318,8 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">TeamViewer ID</label>
-                            <input type="text" class="form-control" @bind="SelectedAssetTeamViewer" />
+                            <label class="form-label">RUST DESK ID</label>
+                            <input type="text" class="form-control" @bind="SelectedAssetRustDesk" />
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">AnyDesk ID</label>
@@ -543,8 +543,8 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">TeamViewer ID</label>
-                            <input type="text" class="form-control" @bind="NewAssetTeamViewer" />
+                            <label class="form-label">RUST DESK ID</label>
+                            <input type="text" class="form-control" @bind="NewAssetRustDesk" />
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">AnyDesk ID</label>
@@ -644,7 +644,7 @@
     private Asset? SelectedAsset;
     private Asset? NewAsset;
     private string NewAssetSpecs = "";
-    private string NewAssetTeamViewer = "";
+    private string NewAssetRustDesk = "";
     private string NewAssetAnyDesk = "";
     private string MaintenanceNote = "";
     private List<IBrowserFile> uploadedFiles = new List<IBrowserFile>();
@@ -727,14 +727,14 @@
     }
 
     private string SelectedAssetSpecs = "";
-    private string SelectedAssetTeamViewer = "";
+    private string SelectedAssetRustDesk = "";
     private string SelectedAssetAnyDesk = "";
 
     private void OpenModal(Asset asset)
     {
         SelectedAsset = asset;
         SelectedAssetSpecs = ExtractDetail(asset.Details, "Specs");
-        SelectedAssetTeamViewer = ExtractDetail(asset.Details, "TeamViewerId");
+        SelectedAssetRustDesk = ExtractDetail(asset.Details, "RustDeskId");
         SelectedAssetAnyDesk = ExtractDetail(asset.Details, "AnyDeskId");
     }
 
@@ -825,12 +825,12 @@
     {
         if (NewAsset != null && !string.IsNullOrWhiteSpace(NewAsset.AssetTag))
         {
-            if (!string.IsNullOrWhiteSpace(NewAssetSpecs) || !string.IsNullOrWhiteSpace(NewAssetTeamViewer) || !string.IsNullOrWhiteSpace(NewAssetAnyDesk))
+            if (!string.IsNullOrWhiteSpace(NewAssetSpecs) || !string.IsNullOrWhiteSpace(NewAssetRustDesk) || !string.IsNullOrWhiteSpace(NewAssetAnyDesk))
             {
                 NewAsset.Details = System.Text.Json.JsonSerializer.Serialize(new 
                 { 
                     Specs = NewAssetSpecs,
-                    TeamViewerId = NewAssetTeamViewer,
+                    RustDeskId = NewAssetRustDesk,
                     AnyDeskId = NewAssetAnyDesk
                 });
             }
@@ -865,7 +865,7 @@
             await LoadAssets();
             NewAsset = null;
             NewAssetSpecs = "";
-            NewAssetTeamViewer = "";
+            NewAssetRustDesk = "";
             NewAssetAnyDesk = "";
             uploadedFiles = new List<IBrowserFile>();
         }
@@ -892,12 +892,12 @@
     {
         if (SelectedAsset != null)
         {
-            if (!string.IsNullOrWhiteSpace(SelectedAssetSpecs) || !string.IsNullOrWhiteSpace(SelectedAssetTeamViewer) || !string.IsNullOrWhiteSpace(SelectedAssetAnyDesk))
+            if (!string.IsNullOrWhiteSpace(SelectedAssetSpecs) || !string.IsNullOrWhiteSpace(SelectedAssetRustDesk) || !string.IsNullOrWhiteSpace(SelectedAssetAnyDesk))
             {
                 SelectedAsset.Details = System.Text.Json.JsonSerializer.Serialize(new 
                 { 
                     Specs = SelectedAssetSpecs,
-                    TeamViewerId = SelectedAssetTeamViewer,
+                    RustDeskId = SelectedAssetRustDesk,
                     AnyDeskId = SelectedAssetAnyDesk
                 });
             }
@@ -963,3 +963,4 @@
         }
     }
 }
+
