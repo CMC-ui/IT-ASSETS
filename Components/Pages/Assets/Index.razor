@@ -340,10 +340,28 @@
                     }
                     <div class="mb-3">
                         <label class="form-label">Upload Documents/Images (Max 10MB each)</label>
-                        <InputFile OnChange="@LoadFiles" class="form-control" accept=".pdf,.png,.jpg,.jpeg" multiple />
+                        <div class="d-flex gap-2 mb-2">
+                            <label class="btn btn-outline-primary w-50 m-0">
+                                <i class="bi bi-camera"></i> Take Photo
+                                <InputFile OnChange="@AppendFiles" accept="image/*" capture="environment" multiple hidden />
+                            </label>
+                            <label class="btn btn-outline-secondary w-50 m-0">
+                                <i class="bi bi-folder2-open"></i> Browse Files
+                                <InputFile OnChange="@AppendFiles" accept=".pdf,.png,.jpg,.jpeg,image/*" multiple hidden />
+                            </label>
+                        </div>
                         @if (uploadedFiles.Any())
                         {
-                            <small class="text-success d-block mt-1">Ready to upload @uploadedFiles.Count files</small>
+                            <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded border">
+                                <small class="text-success fw-bold"><i class="bi bi-check-circle"></i> Ready to upload @uploadedFiles.Count files</small>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0" @onclick="ClearFiles">Clear</button>
+                            </div>
+                            <ul class="list-unstyled mt-2 small mb-0">
+                                @foreach(var f in uploadedFiles)
+                                {
+                                    <li><i class="bi bi-file-earmark text-muted"></i> @f.Name</li>
+                                }
+                            </ul>
                         }
                         
                         @if (SelectedAsset.Documents != null && SelectedAsset.Documents.Any())
@@ -539,10 +557,28 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Upload Documents/Images (Max 10MB each)</label>
-                        <InputFile OnChange="@LoadFiles" class="form-control" accept=".pdf,.png,.jpg,.jpeg" multiple />
+                        <div class="d-flex gap-2 mb-2">
+                            <label class="btn btn-outline-primary w-50 m-0">
+                                <i class="bi bi-camera"></i> Take Photo
+                                <InputFile OnChange="@AppendFiles" accept="image/*" capture="environment" multiple hidden />
+                            </label>
+                            <label class="btn btn-outline-secondary w-50 m-0">
+                                <i class="bi bi-folder2-open"></i> Browse Files
+                                <InputFile OnChange="@AppendFiles" accept=".pdf,.png,.jpg,.jpeg,image/*" multiple hidden />
+                            </label>
+                        </div>
                         @if (uploadedFiles.Any())
                         {
-                            <small class="text-success d-block mt-1">Ready to upload @uploadedFiles.Count files</small>
+                            <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded border">
+                                <small class="text-success fw-bold"><i class="bi bi-check-circle"></i> Ready to upload @uploadedFiles.Count files</small>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0" @onclick="ClearFiles">Clear</button>
+                            </div>
+                            <ul class="list-unstyled mt-2 small mb-0">
+                                @foreach(var f in uploadedFiles)
+                                {
+                                    <li><i class="bi bi-file-earmark text-muted"></i> @f.Name</li>
+                                }
+                            </ul>
                         }
                     </div>
                 </div>
@@ -611,7 +647,7 @@
     private string NewAssetTeamViewer = "";
     private string NewAssetAnyDesk = "";
     private string MaintenanceNote = "";
-    private IReadOnlyList<IBrowserFile> uploadedFiles = new List<IBrowserFile>();
+    private List<IBrowserFile> uploadedFiles = new List<IBrowserFile>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -828,9 +864,14 @@
         }
     }
 
-    private void LoadFiles(InputFileChangeEventArgs e)
+    private void AppendFiles(InputFileChangeEventArgs e)
     {
-        uploadedFiles = e.GetMultipleFiles(10);
+        uploadedFiles.AddRange(e.GetMultipleFiles(10));
+    }
+
+    private void ClearFiles()
+    {
+        uploadedFiles.Clear();
     }
 
     private async Task DeleteDocument(AssetDocument doc)
