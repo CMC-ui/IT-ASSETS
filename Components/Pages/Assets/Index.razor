@@ -654,8 +654,15 @@
         if (!string.IsNullOrWhiteSpace(SearchQueryParam))
         {
             SearchQuery = SearchQueryParam;
+            IsCardView = true; // Use card view for mobile scans
         }
         await LoadAssets();
+        
+        if (!string.IsNullOrWhiteSpace(SearchQueryParam) && FilteredAssets != null && FilteredAssets.Count == 1)
+        {
+            OpenModal(FilteredAssets.First());
+            SearchQueryParam = null; // clear to prevent reopening on re-renders
+        }
     }
 
     private async Task LoadAssets()
