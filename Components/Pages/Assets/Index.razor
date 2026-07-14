@@ -155,7 +155,7 @@
                 <tr><th>Status</th><td>@SelectedAsset.Status</td></tr>
                 <tr><th>MAC Address</th><td>@SelectedAsset.MacAddress</td></tr>
                 <tr><th>IP Address</th><td>@SelectedAsset.IpAddress</td></tr>
-                <tr><th>Purchase Price</th><td>@SelectedAsset.PurchasePrice.ToString("C", new System.Globalization.CultureInfo("en-US"))</td></tr>
+                <tr><th>Purchase Price</th><td>@SelectedAsset.PurchasePrice.ToString("C", new System.Globalization.CultureInfo("en-ZA"))</td></tr>
                 <tr><th>Warranty Expiration</th><td>@SelectedAsset.WarrantyExpiration?.ToString("yyyy-MM-dd")</td></tr>
                 <tr><th>Hardware Specs</th><td>@SelectedAssetSpecs</td></tr>
                 <tr><th>RUST DESK ID</th><td>@SelectedAssetRustDesk</td></tr>
@@ -305,7 +305,7 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Purchase Price</label>
                             <div class="input-group">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">R</span>
                                 <input type="number" step="0.01" class="form-control" @bind="SelectedAsset.PurchasePrice" />
                             </div>
                         </div>
@@ -551,7 +551,7 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Purchase Price</label>
                             <div class="input-group">
-                                <span class="input-group-text">$</span>
+                                <span class="input-group-text">R</span>
                                 <input type="number" step="0.01" class="form-control" @bind="NewAsset.PurchasePrice" />
                             </div>
                         </div>
@@ -647,9 +647,10 @@
                     <p class="text-muted small mb-0">SN: @AssetToPrint.SerialNumber</p>
                 </div>
                 <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-outline-danger" @onclick="ClosePrintModal">Close</button>
-                    <a href="data:image/png;base64,@QRBase64" download="QRCode_@(AssetToPrint.AssetTag).png" class="btn btn-success">Download Image</a>
-                    <button type="button" class="btn btn-primary" onclick="window.print()">Print Label</button>
+                    <button type="button" class="btn btn-outline-danger m-1" @onclick="ClosePrintModal">Close</button>
+                    <a href="data:image/png;base64,@QRBase64" download="QRCode_@(AssetToPrint.AssetTag).png" class="btn btn-success m-1">Download Image</a>
+                    <button type="button" class="btn btn-primary m-1" onclick="window.print()">Print Label</button>
+                    <a href="mailto:diamondcards@cmcglobal.co.za?subject=Print QR Code for Asset @(AssetToPrint.AssetTag)&body=Please find the attached QR code to be printed for Asset Tag: @(AssetToPrint.AssetTag)%0D%0A(Note: Don't forget to attach the downloaded QR Code image!)" class="btn btn-info text-white m-1">Email</a>
                 </div>
             </div>
         </div>

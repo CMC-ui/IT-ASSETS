@@ -1,34 +1,76 @@
 window.qrScanner = {
-    html5QrcodeScanner: null,
+    html5Qrcode: null,
 
     start: function (elementId, dotnetHelper) {
-        if (this.html5QrcodeScanner) {
-            this.html5QrcodeScanner.clear();
+        if (this.html5Qrcode) {
+            this.stop();
         }
 
-        this.html5QrcodeScanner = new Html5QrcodeScanner(
-            elementId,
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            /* verbose= */ false
-        );
+        this.html5Qrcode = new Html5Qrcode(elementId);
+        
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        this.html5QrcodeScanner.render((decodedText, decodedResult) => {
-            // Successfully scanned
-            dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
+        this.html5Qrcode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText, decodedResult) => {
+                // Successfully scanned
+                dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
+                this.stop();
+            },
+            (errorMessage) => {
+                // parse error, ignore it.
+            }
+        ).catch(err => {
+            console.error("Camera start failed: ", err);
             
-            // Stop scanning after first success
-            this.stop();
-        }, (errorMessage) => {
-            // parse error, ignore it.
+            // Inject a friendly error message and a file input fallback into the UI
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `
+                    <div class="alert alert-danger mb-3 p-2" style="font-size: 0.9rem;">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Camera Error</strong><br>
+                        ${err.name === 'NotAllowedError' ? 'Please grant camera permissions.' : 'Could not start camera (requires HTTPS or a valid camera). Please use the fallback below.'}
+                    </div>
+                    <div class="mb-3">
+                        <label class="btn btn-primary w-100">
+                            <i class="bi bi-image"></i> Scan from Image File
+                            <input type="file" id="qr-file-input" accept="image/*" hidden />
+                        </label>
+                    </div>
+                `;
+                
+                document.getElementById('qr-file-input').addEventListener('change', (e) => {
+                    if (e.target.files.length === 0) return;
+                    const file = e.target.files[0];
+                    this.html5Qrcode.scanFile(file, true)
+                        .then(decodedText => {
+                            dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
+                            this.stop();
+                        })
+                        .catch(err => {
+                            alert("Could not read QR code from image. Try another picture.");
+                        });
+                });
+            }
         });
     },
 
     stop: function () {
-        if (this.html5QrcodeScanner) {
-            this.html5QrcodeScanner.clear().catch(error => {
-                console.error("Failed to clear html5QrcodeScanner. ", error);
-            });
-            this.html5QrcodeScanner = null;
+        if (this.html5Qrcode) {
+            try {
+                // If it was never fully started (e.g. error caught), stop() will fail, so we catch it
+                this.html5Qrcode.stop().then(() => {
+                    this.html5Qrcode.clear();
+                    this.html5Qrcode = null;
+                }).catch(err => {
+                    this.html5Qrcode.clear();
+                    this.html5Qrcode = null;
+                });
+            } catch(e) {
+                this.html5Qrcode.clear();
+                this.html5Qrcode = null;
+            }
         }
     }
 };
