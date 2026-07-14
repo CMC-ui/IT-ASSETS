@@ -9,6 +9,9 @@ public class ApplicationUser : IdentityUser
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string Surname { get; set; } = string.Empty;
+
     public int? BranchId { get; set; }
     public Branch? Branch { get; set; }
     public int? DepartmentId { get; set; }

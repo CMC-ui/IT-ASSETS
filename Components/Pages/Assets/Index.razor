@@ -1086,7 +1086,7 @@
     private async Task OpenSignatureModal()
     {
         IsSignatureOpen = true;
-        SignaturePrintedName = SelectedAsset?.User?.Name ?? "";
+        SignaturePrintedName = $"{SelectedAsset?.User?.Name} {SelectedAsset?.User?.Surname}".Trim();
         StateHasChanged();
         await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("signaturePad.init", "signatureCanvas");

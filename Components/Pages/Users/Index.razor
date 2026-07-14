@@ -103,7 +103,7 @@
                                         {
                                             <i class="bi bi-person-circle text-secondary fs-4 me-2"></i>
                                         }
-                                        <strong>@user.Name</strong>
+                                        <strong>@user.Name @user.Surname</strong>
                                     </div>
                                 </td>
                                 <td>@user.Email</td>
@@ -175,7 +175,7 @@
                                                 <i class="bi bi-person-circle text-secondary me-3" style="font-size: 3rem; line-height: 1;"></i>
                                             }
                                             <div>
-                                                <h5 class="card-title fw-bold text-primary mb-1">@user.Name</h5>
+                                                <h5 class="card-title fw-bold text-primary mb-1">@user.Name @user.Surname</h5>
                                                 <span class="badge bg-info text-dark shadow-sm">@role</span>
                                             </div>
                                         </div>
@@ -324,6 +324,10 @@
                     <div class="mb-3">
                         <label class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" @bind="userContext.Name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Surname</label>
+                        <input type="text" class="form-control" @bind="userContext.Surname" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Profile Picture</label>
@@ -628,6 +632,7 @@
         {
             Id = user.Id,
             Name = user.Name,
+            Surname = user.Surname,
             Email = user.Email,
             Extension = user.Extension,
             BranchId = user.BranchId,
@@ -689,6 +694,7 @@
             if (dbUser != null)
             {
                 dbUser.Name = SelectedUserForEdit.Name;
+                dbUser.Surname = SelectedUserForEdit.Surname;
                 dbUser.Extension = SelectedUserForEdit.Extension;
                 dbUser.BranchId = SelectedUserForEdit.BranchId;
                 dbUser.DepartmentId = SelectedUserForEdit.DepartmentId;
