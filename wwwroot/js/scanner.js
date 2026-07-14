@@ -78,23 +78,12 @@ window.qrScanner = {
 window.qrShare = {
     shareImage: async function (base64Data, filename, toEmail, subject, body) {
         
-        const fallbackToEml = () => {
-            const boundary = "----=_Part_0_1234567890";
-            let emlContent = `X-Unsent: 1\r\nTo: ${toEmail}\r\nSubject: ${subject}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n--${boundary}\r\nContent-Type: text/plain; charset="utf-8"\r\n\r\n${body}\r\n\r\n--${boundary}\r\nContent-Type: image/png; name="${filename}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${filename}"\r\n\r\n${base64Data}\r\n--${boundary}--`;
-
-            const blob = new Blob([emlContent], { type: 'message/rfc822' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `PrintRequest_${filename.replace('.png', '')}.eml`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        const fallbackToAlert = () => {
+            alert("Your browser is blocking the Share menu because you are not on a secure HTTPS connection (Netbird HTTP).\n\nPlease click 'Download Image' first, and then attach it manually to your Email/WhatsApp.");
         };
 
         if (!navigator.canShare) {
-            fallbackToEml();
+            fallbackToAlert();
             return false;
         }
 
@@ -116,14 +105,13 @@ window.qrShare = {
                 });
                 return true;
             } else {
-                fallbackToEml();
+                fallbackToAlert();
                 return false;
             }
         } catch (error) {
             console.error('Error sharing:', error);
-            // If the user cancelled the share, error.name is usually 'AbortError'.
             if (error.name !== 'AbortError') {
-                fallbackToEml();
+                fallbackToAlert();
             }
             return false;
         }
