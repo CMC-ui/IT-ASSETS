@@ -8,7 +8,11 @@ window.qrScanner = {
 
         this.html5Qrcode = new Html5Qrcode(elementId);
         
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        // Using a rectangular qrbox makes it much easier to scan 1D barcodes (which are wide).
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 300, height: 150 } 
+        };
 
         this.html5Qrcode.start(
             { facingMode: "environment" },
