@@ -42,7 +42,7 @@ namespace ItAssets.Services
                 row.RelativeItem().Column(column =>
                 {
                     column.Item().Text("IT ASSET HANDOVER FORM").FontSize(20).SemiBold().FontColor(Colors.Blue.Darken2);
-                    column.Item().Text($"Date: {DateTime.Now:d}").FontSize(14);
+                    column.Item().Text($"Date: {DateTime.Now:yyyy/MM/dd}").FontSize(14);
                 });
             });
         }
