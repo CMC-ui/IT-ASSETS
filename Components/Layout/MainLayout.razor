@@ -1,20 +1,46 @@
 @inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
+    <div class="sidebar d-none d-md-block">
         <NavMenu />
     </div>
 
-    <main class="w-100">
-        <div class="px-4 pt-3 d-none d-sm-block">
-            <button class="btn btn-outline-secondary border-0" onclick="toggleSidebar()" title="Toggle Menu">
-                <i class="bi bi-list fs-5"></i>
-            </button>
-        </div>
-        <article class="content px-4">
+    <main class="w-100 pb-5 pb-md-0">
+        <article class="content px-2 px-md-4 py-3">
             @Body
         </article>
     </main>
+</div>
+
+<!-- Mobile Bottom Navigation -->
+<div class="fixed-bottom d-md-none bg-dark border-top border-secondary shadow-lg z-3">
+    <div class="d-flex justify-content-around align-items-center py-2">
+        <NavLink href="" class="text-center text-decoration-none text-light flex-fill opacity-75" Match="NavLinkMatch.All" ActiveClass="opacity-100 text-info font-weight-bold">
+            <i class="bi bi-box fs-4 d-block mb-1"></i>
+            <div style="font-size: 0.7rem; line-height: 1;">Assets</div>
+        </NavLink>
+        <NavLink href="users" class="text-center text-decoration-none text-light flex-fill opacity-75" ActiveClass="opacity-100 text-info font-weight-bold">
+            <i class="bi bi-people fs-4 d-block mb-1"></i>
+            <div style="font-size: 0.7rem; line-height: 1;">Users</div>
+        </NavLink>
+        <AuthorizeView>
+            <Authorized>
+                <form method="post" action="Identity/Account/Logout?returnUrl=/Identity/Account/Login" class="flex-fill text-center m-0 p-0">
+                    <AntiforgeryToken />
+                    <button type="submit" class="btn btn-link text-decoration-none text-light opacity-75 p-0 w-100" style="border: none;">
+                        <i class="bi bi-box-arrow-right fs-4 d-block mb-1"></i>
+                        <div style="font-size: 0.7rem; line-height: 1;">Logout</div>
+                    </button>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <NavLink href="Identity/Account/Login" class="text-center text-decoration-none text-light flex-fill opacity-75" ActiveClass="opacity-100 text-info font-weight-bold">
+                    <i class="bi bi-box-arrow-in-right fs-4 d-block mb-1"></i>
+                    <div style="font-size: 0.7rem; line-height: 1;">Login</div>
+                </NavLink>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>

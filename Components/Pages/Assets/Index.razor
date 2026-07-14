@@ -12,7 +12,37 @@
 
 <PageTitle>Assets</PageTitle>
 
-<div class="card shadow-sm">
+<!-- Mobile-First Scanner View (Only visible on mobile) -->
+<div class="d-block d-md-none vh-100 position-relative" style="margin-top: -1rem; margin-left: -1rem; margin-right: -1rem; background-color: #f8f9fa;">
+    <!-- Top Header -->
+    <div class="bg-primary text-white p-3 shadow-sm d-flex justify-content-between align-items-center">
+        <h4 class="m-0 fw-bold"><i class="bi bi-box-seam me-2"></i> IT Assets</h4>
+        <button class="btn btn-outline-light btn-sm" @onclick="OpenAddModal"><i class="bi bi-plus-lg"></i> Add</button>
+    </div>
+
+    <!-- Center Scanner Button -->
+    <div class="d-flex flex-column align-items-center justify-content-center" style="height: calc(100vh - 160px);">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-dark mb-2">Ready to Scan</h2>
+            <p class="text-muted px-4">Tap the button below to scan an asset's QR code or Serial Number.</p>
+        </div>
+        
+        <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
+                style="width: 140px; height: 140px; border: 6px solid #e2e8f0; transition: transform 0.2s;"
+                @onclick='() => OpenScannerModal("GlobalSearch")'>
+            <i class="bi bi-qr-code-scan text-white" style="font-size: 3.5rem;"></i>
+        </button>
+        
+        <div class="mt-5">
+            <button class="btn btn-link text-decoration-none text-muted" @onclick="OpenAddModal">
+                <i class="bi bi-keyboard me-1"></i> Enter Manually
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Desktop View (Hidden on mobile) -->
+<div class="card shadow-sm d-none d-md-block">
     <div class="card-body">
         <div class="row mb-3">
             <div class="col-md-6 d-flex">
@@ -190,8 +220,95 @@
             </div>
         }
     </div>
-    <!-- Quick Manage Modal -->
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <!-- Mobile Asset Card Modal -->
+    <div class="modal fade show d-block d-md-none" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-fullscreen m-0">
+            <div class="modal-content border-0 rounded-0">
+                <div class="modal-header bg-primary text-white border-0 py-3">
+                    <h5 class="modal-title fw-bold">@SelectedAsset.AssetTag</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body p-0 bg-light">
+                    <!-- Top Section: Photo -->
+                    <div class="bg-dark text-center position-relative" style="height: 280px; overflow: hidden;">
+                        @{ var mainPhoto = SelectedAsset.Documents?.FirstOrDefault(d => d.DocumentType == "Photo"); }
+                        @if (mainPhoto != null)
+                        {
+                            <img src="/uploads/@mainPhoto.FilePath" class="img-fluid w-100 h-100" style="object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary">
+                                <i class="bi bi-camera fs-1 mb-2"></i>
+                                <span>No Picture Available</span>
+                            </div>
+                        }
+                        
+                        <!-- Camera Button -->
+                        <label class="btn btn-primary rounded-circle shadow position-absolute" style="bottom: 15px; right: 15px; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="bi bi-camera-fill fs-4"></i>
+                            <Microsoft.AspNetCore.Components.Forms.InputFile OnChange="@HandlePhotoUpload" accept="image/*" capture="environment" hidden />
+                        </label>
+                    </div>
+
+                    <div class="p-3">
+                        <!-- Primary Info -->
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <h3 class="mb-1 fw-bold text-dark">@SelectedAsset.MakeModel</h3>
+                                <p class="text-muted mb-0">@SelectedAsset.DeviceType &bull; SN: @SelectedAsset.SerialNumber</p>
+                            </div>
+                            <span class="badge @GetStatusBadgeClass(SelectedAsset.Status) fs-6 px-3 py-2">@SelectedAsset.Status</span>
+                        </div>
+
+                        <!-- Assigned User & Handover -->
+                        <div class="card border-0 shadow-sm mb-4 rounded-4">
+                            <div class="card-body p-3">
+                                <h6 class="text-uppercase text-muted small fw-bold mb-3">Assignment</h6>
+                                <div class="mb-3">
+                                    <select class="form-select border-0 bg-light fw-semibold" @bind="SelectedAsset.UserId">
+                                        <option value="">-- Unassigned --</option>
+                                        @if (AllUsers != null)
+                                        {
+                                            @foreach (var user in AllUsers)
+                                            {
+                                                <option value="@user.Id">@user.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="mobileSignedHandover" @bind="SelectedAsset.UserSignedHandover">
+                                        <label class="form-check-label small" for="mobileSignedHandover">Handover Signed</label>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(SelectedAsset.UserId))
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3" @onclick="OpenSignatureModal">
+                                            <i class="bi bi-pen"></i> Sign
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 mb-4">
+                            <button class="btn btn-outline-secondary flex-fill rounded-pill py-2 shadow-sm" @onclick="() => { CloseModal(); OpenPrintModal(SelectedAsset); }">
+                                <i class="bi bi-printer me-1"></i> Print QR
+                            </button>
+                            <button class="btn btn-primary flex-fill rounded-pill py-2 shadow-sm" @onclick="SaveAsset">
+                                <i class="bi bi-check2-circle me-1"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Quick Manage Modal -->
+    <div class="modal fade show d-none d-md-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1173,9 +1290,60 @@
             {
                 OpenModal(FilteredAssets.First());
             }
+            else if (FilteredAssets == null || FilteredAssets.Count == 0)
+            {
+                // No match, open Add Asset with pre-filled tag
+                OpenAddModal();
+                if (NewAsset != null)
+                {
+                    NewAsset.AssetTag = tag;
+                }
+            }
         }
         
         StateHasChanged();
+    }
+
+    private async Task HandlePhotoUpload(Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs e)
+    {
+        if (SelectedAsset == null) return;
+        
+        var file = e.File;
+        if (file != null)
+        {
+            try
+            {
+                var relativePath = await FileStorage.SaveFileAsync(file);
+                
+                SelectedAsset.Documents ??= new List<AssetDocument>();
+                
+                var oldPhoto = SelectedAsset.Documents.FirstOrDefault(d => d.DocumentType == "Photo");
+                if (oldPhoto != null)
+                {
+                    DbContext.Set<AssetDocument>().Remove(oldPhoto);
+                    SelectedAsset.Documents.Remove(oldPhoto);
+                    try { FileStorage.DeleteFile(oldPhoto.FilePath); } catch { }
+                }
+
+                var doc = new AssetDocument
+                {
+                    FileName = file.Name,
+                    FilePath = relativePath,
+                    DocumentType = "Photo",
+                    AssetId = SelectedAsset.Id
+                };
+                
+                SelectedAsset.Documents.Add(doc);
+                DbContext.Update(SelectedAsset);
+                await DbContext.SaveChangesAsync();
+                
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error uploading photo: {ex.Message}");
+            }
+        }
     }
 
     private bool IsSignatureOpen = false;
