@@ -671,6 +671,10 @@
                     <button type="button" class="btn-close" @onclick="CloseSignatureModal"></button>
                 </div>
                 <div class="modal-body text-center">
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold">Printed Name</label>
+                        <input type="text" class="form-control" @bind="SignaturePrintedName" placeholder="Name and Surname" />
+                    </div>
                     <p>Please sign below:</p>
                     <div class="border rounded bg-light p-2 mb-3" style="touch-action: none;">
                         <canvas id="signatureCanvas" width="400" height="200" style="width: 100%; max-width: 400px; height: 200px; border: 1px dashed #ccc; background: #fff;"></canvas>
@@ -1077,10 +1081,12 @@
     }
 
     private bool IsSignatureOpen = false;
+    private string SignaturePrintedName = "";
 
     private async Task OpenSignatureModal()
     {
         IsSignatureOpen = true;
+        SignaturePrintedName = SelectedAsset?.User?.Name ?? "";
         StateHasChanged();
         await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("signaturePad.init", "signatureCanvas");
@@ -1102,7 +1108,7 @@
         
         if (SelectedAsset != null)
         {
-            var pdfBytes = HandoverPdfService.GenerateHandoverPdf(SelectedAsset, base64Signature);
+            var pdfBytes = HandoverPdfService.GenerateHandoverPdf(SelectedAsset, base64Signature, SignaturePrintedName);
             
             var fileName = $"Handover_{SelectedAsset.AssetTag}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
             var result = await FileStorage.SaveFileAsync(pdfBytes, fileName);

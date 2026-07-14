@@ -9,7 +9,7 @@ namespace ItAssets.Services
 {
     public class HandoverPdfService
     {
-        public byte[] GenerateHandoverPdf(Asset asset, string signatureBase64)
+        public byte[] GenerateHandoverPdf(Asset asset, string signatureBase64, string printedName)
         {
             var document = Document.Create(container =>
             {
@@ -21,7 +21,7 @@ namespace ItAssets.Services
                     page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
 
                     page.Header().Element(ComposeHeader);
-                    page.Content().Element(x => ComposeContent(x, asset, signatureBase64));
+                    page.Content().Element(x => ComposeContent(x, asset, signatureBase64, printedName));
                     page.Footer().AlignCenter().Text(x =>
                     {
                         x.Span("Page ");
@@ -47,13 +47,13 @@ namespace ItAssets.Services
             });
         }
 
-        private void ComposeContent(IContainer container, Asset asset, string signatureBase64)
+        private void ComposeContent(IContainer container, Asset asset, string signatureBase64, string printedName)
         {
             container.PaddingVertical(1, Unit.Centimetre).Column(column =>
             {
                 column.Spacing(20);
 
-                column.Item().Text("I acknowledge receipt of the following company property. I agree to use it responsibly and return it in good condition when requested or upon termination of employment.").FontSize(12);
+                column.Item().Text("I acknowledge receipt of the following company property. I agree to use it responsibly and return it in good condition when requested or upon termination of my employment. If the device fails, gets damaged, or is lost, it is my duty to report it immediately.").FontSize(12);
 
                 column.Item().Table(table =>
                 {
@@ -98,7 +98,7 @@ namespace ItAssets.Services
                             signatureColumn.Item().Height(100).Width(200).Border(1).BorderColor(Colors.Grey.Medium);
                         }
                         
-                        signatureColumn.Item().PaddingTop(5).Text(asset.User?.Name ?? "_______________________");
+                        signatureColumn.Item().PaddingTop(5).Text(string.IsNullOrWhiteSpace(printedName) ? "_______________________" : printedName.ToUpper());
                     });
                 });
             });
