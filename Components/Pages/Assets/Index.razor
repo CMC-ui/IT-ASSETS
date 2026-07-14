@@ -1025,14 +1025,26 @@
     {
         IsScannerOpen = true;
         StateHasChanged();
+        await Task.Delay(100); // Give DOM time to render the modal
         dotNetRef = DotNetObjectReference.Create(this);
-        await JSRuntime.InvokeVoidAsync("qrScanner.start", "qr-reader", dotNetRef);
+        try 
+        {
+            await JSRuntime.InvokeVoidAsync("qrScanner.start", "qr-reader", dotNetRef);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting scanner: {ex.Message}");
+        }
     }
 
     private async Task CloseScannerModal()
     {
         IsScannerOpen = false;
-        await JSRuntime.InvokeVoidAsync("qrScanner.stop");
+        try 
+        {
+            await JSRuntime.InvokeVoidAsync("qrScanner.stop");
+        }
+        catch { }
         dotNetRef?.Dispose();
     }
 
