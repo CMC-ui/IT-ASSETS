@@ -24,9 +24,9 @@
                     <input type="radio" class="btn-check" name="viewToggle" id="cardView" autocomplete="off" checked="@IsCardView" @onchange="@(() => IsCardView = true)">
                     <label class="btn btn-outline-secondary" for="cardView"><i class="bi bi-grid"></i></label>
                 </div>
-                <button class="btn btn-outline-primary ms-2" @onclick="OpenScannerModal">
-                    <i class="bi bi-upc-scan"></i> Scan QR
-                </button>
+                <button class="btn btn-outline-secondary shadow-sm" @onclick='() => OpenScannerModal("GlobalSearch")'>
+            <i class="bi bi-upc-scan"></i> Scan QR
+        </button>
             </div>
             <div class="col-md-6 text-end">
                 <button class="btn btn-primary shadow-sm" @onclick="OpenAddModal">
@@ -439,8 +439,11 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Asset Tag <span class="text-muted">(Auto-generated)</span></label>
-                            <input type="text" class="form-control" @bind="NewAsset.AssetTag" readonly disabled />
+                            <label class="form-label">Asset Tag</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" @bind="NewAsset.AssetTag" />
+                                <button class="btn btn-outline-secondary" type="button" @onclick='() => OpenScannerModal("AssetTag")'><i class="bi bi-upc-scan"></i></button>
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Device Type</label>
@@ -454,7 +457,10 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Serial Number</label>
-                            <input type="text" class="form-control" @bind="NewAsset.SerialNumber" />
+                            <div class="input-group">
+                                <input type="text" class="form-control" @bind="NewAsset.SerialNumber" />
+                                <button class="btn btn-outline-secondary" type="button" @onclick='() => OpenScannerModal("SerialNumber")'><i class="bi bi-upc-scan"></i></button>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
@@ -466,7 +472,17 @@
                             </select>
                         </div>
                     </div>
-                    <div class="row">
+                    
+                    <div class="accordion mb-3" id="addAssetAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMoreDetails">
+                                    More Details (Optional)
+                                </button>
+                            </h2>
+                            <div id="collapseMoreDetails" class="accordion-collapse collapse" data-bs-parent="#addAssetAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Supplier</label>
                             <input type="text" class="form-control" @bind="NewAsset.Supplier" />
@@ -572,6 +588,11 @@
                         <label class="form-label">NOTES</label>
                         <textarea class="form-control" rows="2" placeholder="Enter notes here..." @bind="NewAsset.Notes"></textarea>
                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Upload Documents/Images (Max 10MB each)</label>
                         <div class="d-flex gap-2 mb-2">
@@ -601,7 +622,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CloseAddModal">Cancel</button>
-                    <button type="button" class="btn btn-success" @onclick="SaveNewAsset">Add Asset</button>
+                    <button type="button" class="btn btn-outline-primary" @onclick="() => SaveNewAsset(true)">Save & Add Next</button>
+                    <button type="button" class="btn btn-primary" @onclick="() => SaveNewAsset(false)">Save</button>
                 </div>
             </div>
         </div>
@@ -890,7 +912,7 @@
         return Convert.ToBase64String(qrCodeImage);
     }
 
-    private async Task SaveNewAsset()
+    private async Task SaveNewAsset(bool keepOpen = false)
     {
         if (NewAsset != null && !string.IsNullOrWhiteSpace(NewAsset.AssetTag))
         {
@@ -923,11 +945,52 @@
             }
 
             await LoadAssets();
-            NewAsset = null;
-            NewAssetSpecs = "";
-            NewAssetRustDesk = "";
-            NewAssetAnyDesk = "";
-            uploadedFiles = new List<TempFile>();
+            
+            if (keepOpen)
+            {
+                // Reset unique fields for next capture
+                string nextTag = $"AST-{new Random().Next(10000, 99999)}";
+                var astAssets = DbContext.Assets.Where(a => a.AssetTag.StartsWith("AST-")).ToList();
+                if (astAssets.Any())
+                {
+                    int maxNumber = 0;
+                    foreach(var a in astAssets)
+                    {
+                        if (a.AssetTag.Length >= 8 && int.TryParse(a.AssetTag.Substring(4), out int num))
+                        {
+                            if (num > maxNumber) maxNumber = num;
+                        }
+                    }
+                    if (maxNumber > 0) nextTag = $"AST-{(maxNumber + 1):D4}";
+                }
+
+                var newAsset = new Asset 
+                { 
+                    AssetTag = nextTag,
+                    Status = NewAsset.Status,
+                    DeviceType = NewAsset.DeviceType,
+                    MakeModel = NewAsset.MakeModel,
+                    Supplier = NewAsset.Supplier,
+                    BranchId = NewAsset.BranchId,
+                    DepartmentId = NewAsset.DepartmentId,
+                    DateReceived = NewAsset.DateReceived,
+                    PurchasePrice = NewAsset.PurchasePrice
+                };
+                
+                NewAsset = newAsset;
+                NewAssetSpecs = "";
+                NewAssetRustDesk = "";
+                NewAssetAnyDesk = "";
+                uploadedFiles = new List<TempFile>();
+            }
+            else
+            {
+                NewAsset = null;
+                NewAssetSpecs = "";
+                NewAssetRustDesk = "";
+                NewAssetAnyDesk = "";
+                uploadedFiles = new List<TempFile>();
+            }
         }
     }
 
@@ -1036,8 +1099,11 @@
     private bool IsScannerOpen = false;
     private DotNetObjectReference<Index>? dotNetRef;
 
-    private async Task OpenScannerModal()
+    private string ScannerTargetField = "GlobalSearch";
+
+    private async Task OpenScannerModal(string target = "GlobalSearch")
     {
+        ScannerTargetField = target;
         IsScannerOpen = true;
         StateHasChanged();
         await Task.Delay(100); // Give DOM time to render the modal
@@ -1074,13 +1140,24 @@
             tag = decodedText.Substring(decodedText.IndexOf("search=") + 7);
         }
 
-        SearchQuery = tag;
-        IsCardView = true;
-        FilterAssets();
-
-        if (FilteredAssets != null && FilteredAssets.Count == 1)
+        if (ScannerTargetField == "AssetTag" && NewAsset != null)
         {
-            OpenModal(FilteredAssets.First());
+            NewAsset.AssetTag = tag;
+        }
+        else if (ScannerTargetField == "SerialNumber" && NewAsset != null)
+        {
+            NewAsset.SerialNumber = tag;
+        }
+        else
+        {
+            SearchQuery = tag;
+            IsCardView = true;
+            FilterAssets();
+
+            if (FilteredAssets != null && FilteredAssets.Count == 1)
+            {
+                OpenModal(FilteredAssets.First());
+            }
         }
         
         StateHasChanged();
