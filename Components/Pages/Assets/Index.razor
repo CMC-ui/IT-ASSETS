@@ -893,10 +893,10 @@
 
         var subject = $"Print QR Code for Asset {AssetToPrint.AssetTag}";
         var body = $"Please find the attached QR code to be printed for Asset Tag: {AssetToPrint.AssetTag}\r\nMake/Model: {AssetToPrint.MakeModel}\r\nSN: {AssetToPrint.SerialNumber}";
-        var fallbackUrl = $"mailto:diamondcards@cmcglobal.co.za?subject={Uri.EscapeDataString(subject)}&body={Uri.EscapeDataString(body + "\r\n\r\n(Note: Don't forget to attach the downloaded QR Code image!)")}";
+        var toEmail = "diamondcards@cmcglobal.co.za";
         var filename = $"QRCode_{AssetToPrint.AssetTag}.png";
 
-        await JSRuntime.InvokeVoidAsync("qrShare.shareImage", QRBase64, filename, subject, body, fallbackUrl);
+        await JSRuntime.InvokeVoidAsync("qrShare.shareImage", QRBase64, filename, toEmail, subject, body);
     }
 
     private async Task PrintManageModal()

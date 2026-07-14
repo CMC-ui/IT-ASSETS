@@ -76,9 +76,25 @@ window.qrScanner = {
 };
 
 window.qrShare = {
-    shareImage: async function (base64Data, filename, title, text, fallbackUrl) {
+    shareImage: async function (base64Data, filename, toEmail, subject, body) {
+        
+        const fallbackToEml = () => {
+            const boundary = "----=_Part_0_1234567890";
+            let emlContent = `X-Unsent: 1\r\nTo: ${toEmail}\r\nSubject: ${subject}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n--${boundary}\r\nContent-Type: text/plain; charset="utf-8"\r\n\r\n${body}\r\n\r\n--${boundary}\r\nContent-Type: image/png; name="${filename}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${filename}"\r\n\r\n${base64Data}\r\n--${boundary}--`;
+
+            const blob = new Blob([emlContent], { type: 'message/rfc822' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PrintRequest_${filename.replace('.png', '')}.eml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
         if (!navigator.canShare) {
-            window.location.href = fallbackUrl;
+            fallbackToEml();
             return false;
         }
 
@@ -95,20 +111,19 @@ window.qrShare = {
             if (navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
-                    title: title,
-                    text: text
+                    title: subject,
+                    text: body
                 });
                 return true;
             } else {
-                window.location.href = fallbackUrl;
+                fallbackToEml();
                 return false;
             }
         } catch (error) {
             console.error('Error sharing:', error);
             // If the user cancelled the share, error.name is usually 'AbortError'.
-            // In that case, we do NOT want to trigger the fallback.
             if (error.name !== 'AbortError') {
-                window.location.href = fallbackUrl;
+                fallbackToEml();
             }
             return false;
         }
