@@ -652,7 +652,7 @@
                     <button type="button" class="btn btn-outline-danger m-1" @onclick="ClosePrintModal">Close</button>
                     <a href="data:image/png;base64,@QRBase64" download="QRCode_@(AssetToPrint.AssetTag).png" class="btn btn-success m-1">Download Image</a>
                     <button type="button" class="btn btn-primary m-1" onclick="window.print()">Print Label</button>
-                    <a href="mailto:diamondcards@cmcglobal.co.za?subject=Print QR Code for Asset @(AssetToPrint.AssetTag)&body=Please find the attached QR code to be printed for Asset Tag: @(AssetToPrint.AssetTag)%0D%0A(Note: Don't forget to attach the downloaded QR Code image!)" class="btn btn-info text-white m-1">Email</a>
+                    <button type="button" class="btn btn-info text-white m-1" @onclick="ShareQRCodeEmail"><i class="bi bi-envelope"></i> Email</button>
                 </div>
             </div>
         </div>
@@ -885,6 +885,18 @@
     {
         AssetToPrint = null;
         QRBase64 = "";
+    }
+
+    private async Task ShareQRCodeEmail()
+    {
+        if (AssetToPrint == null || string.IsNullOrEmpty(QRBase64)) return;
+
+        var subject = $"Print QR Code for Asset {AssetToPrint.AssetTag}";
+        var body = $"Please find the attached QR code to be printed for Asset Tag: {AssetToPrint.AssetTag}\r\nMake/Model: {AssetToPrint.MakeModel}\r\nSN: {AssetToPrint.SerialNumber}";
+        var fallbackUrl = $"mailto:diamondcards@cmcglobal.co.za?subject={Uri.EscapeDataString(subject)}&body={Uri.EscapeDataString(body + "\r\n\r\n(Note: Don't forget to attach the downloaded QR Code image!)")}";
+        var filename = $"QRCode_{AssetToPrint.AssetTag}.png";
+
+        await JSRuntime.InvokeVoidAsync("qrShare.shareImage", QRBase64, filename, subject, body, fallbackUrl);
     }
 
     private async Task PrintManageModal()

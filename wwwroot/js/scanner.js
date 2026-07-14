@@ -74,3 +74,43 @@ window.qrScanner = {
         }
     }
 };
+
+window.qrShare = {
+    shareImage: async function (base64Data, filename, title, text, fallbackUrl) {
+        if (!navigator.canShare) {
+            window.location.href = fallbackUrl;
+            return false;
+        }
+
+        try {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], {type: 'image/png'});
+            const file = new File([blob], filename, { type: 'image/png' });
+
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: title,
+                    text: text
+                });
+                return true;
+            } else {
+                window.location.href = fallbackUrl;
+                return false;
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+            // If the user cancelled the share, error.name is usually 'AbortError'.
+            // In that case, we do NOT want to trigger the fallback.
+            if (error.name !== 'AbortError') {
+                window.location.href = fallbackUrl;
+            }
+            return false;
+        }
+    }
+};
