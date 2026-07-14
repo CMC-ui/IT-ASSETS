@@ -76,6 +76,48 @@ window.qrScanner = {
                 this.html5Qrcode = null;
             }
         }
+    },
+
+    scanText: async function (elementId, dotnetHelper) {
+        try {
+            // Find the active video element used by html5-qrcode
+            const video = document.querySelector(`#${elementId} video`);
+            if (!video) {
+                alert("Camera feed not found. Please ensure the scanner is running.");
+                return;
+            }
+
+            // Create a hidden canvas to draw the current video frame
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Notify Blazor that OCR has started
+            await dotnetHelper.invokeMethodAsync('OnOcrProcessingStarted');
+
+            // Run Tesseract.js on the captured canvas
+            const result = await Tesseract.recognize(canvas, 'eng', {
+                logger: m => console.log(m)
+            });
+
+            const text = result.data.text.trim();
+            
+            // Clean up text (remove excessive newlines, limit to alphanumerics if needed, etc)
+            // For now, we'll just return the raw trimmed text.
+            if (text) {
+                dotnetHelper.invokeMethodAsync('OnQrCodeScanned', text);
+                this.stop();
+            } else {
+                alert("Could not recognize any text. Please try again.");
+                await dotnetHelper.invokeMethodAsync('OnOcrProcessingFinished');
+            }
+        } catch (error) {
+            console.error("OCR Error:", error);
+            alert("Error running text scanner. See console for details.");
+            await dotnetHelper.invokeMethodAsync('OnOcrProcessingFinished');
+        }
     }
 };
 

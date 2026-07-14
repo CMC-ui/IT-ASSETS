@@ -796,7 +796,42 @@
                     <button type="button" class="btn-close" @onclick="CloseScannerModal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <div id="qr-reader" style="width:100%"></div>
+                    <div class="btn-group w-100 mb-3" role="group">
+                        <input type="radio" class="btn-check" name="scannerMode" id="modeBarcode" autocomplete="off" checked="@(!IsTextScanMode)" @onchange="@(() => IsTextScanMode = false)">
+                        <label class="btn btn-outline-primary" for="modeBarcode"><i class="bi bi-upc-scan"></i> Barcode</label>
+
+                        <input type="radio" class="btn-check" name="scannerMode" id="modeText" autocomplete="off" checked="@IsTextScanMode" @onchange="@(() => IsTextScanMode = true)">
+                        <label class="btn btn-outline-primary" for="modeText"><i class="bi bi-fonts"></i> Text (OCR)</label>
+                    </div>
+
+                    @if (IsTextScanMode)
+                    {
+                        <div class="alert alert-info mb-2 py-2 small">
+                            <i class="bi bi-info-circle"></i> Point at the text and tap the button below.
+                        </div>
+                    }
+
+                    <div class="position-relative">
+                        <div id="qr-reader" style="width:100%"></div>
+                        
+                        @if (IsTextScanMode)
+                        {
+                            <div class="position-absolute bottom-0 start-0 w-100 pb-3 z-3">
+                                <button class="btn btn-success rounded-pill px-4 py-2 shadow-lg fw-bold" style="font-size: 1.1rem;" @onclick="CaptureTextForOcr" disabled="@IsOcrProcessing">
+                                    @if (IsOcrProcessing)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        <span>Scanning...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-camera-fill me-2"></i>
+                                        <span>Capture Text</span>
+                                    }
+                                </button>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
@@ -1259,6 +1294,29 @@
         }
         catch { }
         dotNetRef?.Dispose();
+    }
+
+    private bool IsTextScanMode = false;
+    private bool IsOcrProcessing = false;
+
+    [JSInvokable]
+    public void OnOcrProcessingStarted()
+    {
+        IsOcrProcessing = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnOcrProcessingFinished()
+    {
+        IsOcrProcessing = false;
+        StateHasChanged();
+    }
+
+    private async Task CaptureTextForOcr()
+    {
+        if (IsOcrProcessing) return;
+        await JSRuntime.InvokeVoidAsync("qrScanner.scanText", "qr-reader", dotNetRef);
     }
 
     [JSInvokable]
