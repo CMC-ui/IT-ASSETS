@@ -9,7 +9,7 @@ window.qrScanner = {
         this.html5Qrcode = new Html5Qrcode(elementId);
         
         // Using a rectangular qrbox makes it much easier to scan 1D barcodes (which are wide).
-        const config = { 
+        const advancedConfig = { 
             fps: 20, 
             qrbox: { width: 300, height: 150 },
             experimentalFeatures: {
@@ -17,25 +17,21 @@ window.qrScanner = {
             }
         };
 
-        this.html5Qrcode.start(
-            { 
-                facingMode: "environment",
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            },
-            config,
-            (decodedText, decodedResult) => {
-                // Successfully scanned
-                dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
-                this.stop();
-            },
-            (errorMessage) => {
-                // parse error, ignore it.
-            }
-        ).catch(err => {
-            console.error("Camera start failed: ", err);
-            
-            // Inject a friendly error message and a file input fallback into the UI
+        const basicConfig = { 
+            fps: 10, 
+            qrbox: { width: 300, height: 150 } 
+        };
+
+        const handleSuccess = (decodedText) => {
+            dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
+            this.stop();
+        };
+
+        const handleError = (errorMessage) => {
+            // parse error, ignore it.
+        };
+
+        const injectFallbackUI = (err) => {
             const element = document.getElementById(elementId);
             if (element) {
                 element.innerHTML = `
@@ -64,6 +60,33 @@ window.qrScanner = {
                         });
                 });
             }
+        };
+
+        // Try advanced high-res hardware-accelerated camera first
+        this.html5Qrcode.start(
+            { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+            advancedConfig,
+            handleSuccess,
+            handleError
+        ).catch(err => {
+            console.warn("Advanced camera configuration failed, trying basic fallback...", err);
+            
+            // If it failed due to permissions, don't retry, just show the error
+            if (err.name === 'NotAllowedError') {
+                injectFallbackUI(err);
+                return;
+            }
+
+            // Retry with basic configuration
+            this.html5Qrcode.start(
+                { facingMode: "environment" },
+                basicConfig,
+                handleSuccess,
+                handleError
+            ).catch(basicErr => {
+                console.error("Basic camera fallback completely failed: ", basicErr);
+                injectFallbackUI(basicErr);
+            });
         });
     },
 
