@@ -711,7 +711,12 @@
     private string NewAssetRustDesk = "";
     private string NewAssetAnyDesk = "";
     private string MaintenanceNote = "";
-    private List<IBrowserFile> uploadedFiles = new List<IBrowserFile>();
+    private class TempFile
+    {
+        public string Name { get; set; } = string.Empty;
+        public string SavedPath { get; set; } = string.Empty;
+    }
+    private List<TempFile> uploadedFiles = new List<TempFile>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -805,7 +810,7 @@
     private void CloseModal()
     {
         SelectedAsset = null;
-        uploadedFiles = new List<IBrowserFile>();
+        ClearFiles();
     }
 
     private async Task OpenAddModal()
@@ -838,7 +843,7 @@
     private void CloseAddModal()
     {
         NewAsset = null;
-        uploadedFiles = new List<IBrowserFile>();
+        ClearFiles();
     }
 
     private Asset? AssetToPrint;
@@ -904,24 +909,15 @@
             
             if (uploadedFiles.Any())
             {
-                var maxAllowedSize = 10 * 1024 * 1024; // 10 MB
                 foreach(var file in uploadedFiles)
                 {
-                    if (file.Size <= maxAllowedSize)
+                    DbContext.AssetDocuments.Add(new AssetDocument
                     {
-                        try
-                        {
-                            var relativePath = await FileStorage.SaveFileAsync(file);
-                            DbContext.AssetDocuments.Add(new AssetDocument
-                            {
-                                AssetId = NewAsset.Id,
-                                FileName = file.Name,
-                                FilePath = relativePath,
-                                DocumentType = "Document"
-                            });
-                        }
-                        catch { }
-                    }
+                        AssetId = NewAsset.Id,
+                        FileName = file.Name,
+                        FilePath = file.SavedPath,
+                        DocumentType = "Document"
+                    });
                 }
                 await DbContext.SaveChangesAsync();
             }
@@ -931,17 +927,36 @@
             NewAssetSpecs = "";
             NewAssetRustDesk = "";
             NewAssetAnyDesk = "";
-            uploadedFiles = new List<IBrowserFile>();
+            uploadedFiles = new List<TempFile>();
         }
     }
 
-    private void AppendFiles(InputFileChangeEventArgs e)
+    private async Task AppendFiles(InputFileChangeEventArgs e)
     {
-        uploadedFiles.AddRange(e.GetMultipleFiles(10));
+        var maxAllowedSize = 10 * 1024 * 1024; // 10 MB
+        foreach (var file in e.GetMultipleFiles(10))
+        {
+            if (file.Size <= maxAllowedSize)
+            {
+                try
+                {
+                    var relativePath = await FileStorage.SaveFileAsync(file);
+                    if (!string.IsNullOrEmpty(relativePath))
+                    {
+                        uploadedFiles.Add(new TempFile { Name = file.Name, SavedPath = relativePath });
+                    }
+                }
+                catch { }
+            }
+        }
     }
 
     private void ClearFiles()
     {
+        foreach(var f in uploadedFiles)
+        {
+            FileStorage.DeleteFile(f.SavedPath);
+        }
         uploadedFiles.Clear();
     }
 
@@ -983,27 +998,18 @@
 
             if (uploadedFiles.Any())
             {
-                var maxAllowedSize = 10 * 1024 * 1024; // 10 MB
                 foreach(var file in uploadedFiles)
                 {
-                    if (file.Size <= maxAllowedSize)
+                    DbContext.AssetDocuments.Add(new AssetDocument
                     {
-                        try
-                        {
-                            var relativePath = await FileStorage.SaveFileAsync(file);
-                            DbContext.AssetDocuments.Add(new AssetDocument
-                            {
-                                AssetId = SelectedAsset.Id,
-                                FileName = file.Name,
-                                FilePath = relativePath,
-                                DocumentType = "Document"
-                            });
-                        }
-                        catch { }
-                    }
+                        AssetId = SelectedAsset.Id,
+                        FileName = file.Name,
+                        FilePath = file.SavedPath,
+                        DocumentType = "Document"
+                    });
                 }
                 await DbContext.SaveChangesAsync();
-                uploadedFiles = new List<IBrowserFile>();
+                uploadedFiles = new List<TempFile>();
             }
 
             await LoadAssets();
