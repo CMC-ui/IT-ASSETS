@@ -473,6 +473,24 @@
                         </div>
                     </div>
                     
+                    <div class="mb-3">
+                        <label class="form-label">Assigned User</label>
+                        <select class="form-select" @bind="NewAsset.UserId">
+                            <option value="">-- Unassigned --</option>
+                            @if (AllUsers != null)
+                            {
+                                @foreach (var user in AllUsers)
+                                {
+                                    <option value="@user.Id">@user.Name (@user.Email)</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="addSignedHandover" @bind="NewAsset.UserSignedHandover">
+                            <label class="form-check-label" for="addSignedHandover">User Signed Handover (Yes/No)</label>
+                        </div>
+                    </div>
+                    
                     <div class="accordion mb-3" id="addAssetAccordion">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
@@ -530,23 +548,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Assigned User</label>
-                        <select class="form-select" @bind="NewAsset.UserId">
-                            <option value="">-- Unassigned --</option>
-                            @if (AllUsers != null)
-                            {
-                                @foreach (var user in AllUsers)
-                                {
-                                    <option value="@user.Id">@user.Name (@user.Email)</option>
-                                }
-                            }
-                        </select>
-                        <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" role="switch" id="addSignedHandover" @bind="NewAsset.UserSignedHandover">
-                            <label class="form-check-label" for="addSignedHandover">User Signed Handover (Yes/No)</label>
-                        </div>
-                    </div>
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Purchase Price</label>
