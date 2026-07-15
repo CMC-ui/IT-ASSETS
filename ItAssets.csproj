@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="IT-ASSETS-Mobile\**" />
+    <Content Remove="IT-ASSETS-Mobile\**" />
+    <EmbeddedResource Remove="IT-ASSETS-Mobile\**" />
+    <None Remove="IT-ASSETS-Mobile\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.9" />
