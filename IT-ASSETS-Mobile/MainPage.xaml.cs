@@ -4,15 +4,11 @@ namespace ItAssets.Mobile;
 
 public partial class MainPage : ContentPage
 {
+    private ZXing.Net.Maui.Controls.CameraBarcodeReaderView _barcodeReader;
+
 	public MainPage()
 	{
 		InitializeComponent();
-        BarcodeReader.Options = new BarcodeReaderOptions
-        {
-            Formats = BarcodeFormats.All,
-            AutoRotate = true,
-            Multiple = false
-        };
 	}
 
     private void AppWebView_Navigating(object sender, WebNavigatingEventArgs e)
@@ -42,8 +38,21 @@ public partial class MainPage : ContentPage
             }
         }
 
+        if (_barcodeReader == null)
+        {
+            _barcodeReader = new ZXing.Net.Maui.Controls.CameraBarcodeReaderView();
+            _barcodeReader.Options = new BarcodeReaderOptions
+            {
+                Formats = BarcodeFormats.All,
+                AutoRotate = true,
+                Multiple = false
+            };
+            _barcodeReader.BarcodesDetected += BarcodesDetected;
+            ScannerHost.Children.Add(_barcodeReader);
+        }
+
         ScannerOverlay.IsVisible = true;
-        BarcodeReader.IsDetecting = true;
+        _barcodeReader.IsDetecting = true;
     }
 
     private void CancelScanner_Clicked(object sender, EventArgs e)
@@ -67,7 +76,10 @@ public partial class MainPage : ContentPage
 
     private void StopScanner()
     {
-        BarcodeReader.IsDetecting = false;
+        if (_barcodeReader != null)
+        {
+            _barcodeReader.IsDetecting = false;
+        }
         ScannerOverlay.IsVisible = false;
     }
 }

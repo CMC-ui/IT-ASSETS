@@ -11,8 +11,7 @@
                  Navigated="AppWebView_Navigated" />
         
         <Grid x:Name="ScannerOverlay" IsVisible="False" BackgroundColor="Black">
-            <zxing:CameraBarcodeReaderView x:Name="BarcodeReader"
-                                           BarcodesDetected="BarcodesDetected" />
+            <Grid x:Name="ScannerHost" />
             <Button Text="Cancel"
                     VerticalOptions="End"
                     HorizontalOptions="Center"
