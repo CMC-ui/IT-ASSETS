@@ -6,103 +6,96 @@ window.qrScanner = {
             this.stop();
         }
 
-        this.html5Qrcode = new Html5Qrcode(elementId);
-        
-        // Using a rectangular qrbox makes it much easier to scan 1D barcodes (which are wide).
-        const advancedConfig = { 
-            fps: 20, 
-            qrbox: { width: 300, height: 150 },
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            }
-        };
-
-        const basicConfig = { 
-            fps: 10, 
-            qrbox: { width: 300, height: 150 } 
-        };
-
-        const handleSuccess = (decodedText) => {
-            dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
-            this.stop();
-        };
-
-        const handleError = (errorMessage) => {
-            // parse error, ignore it.
-        };
-
-        const injectFallbackUI = (err) => {
+        // Delay slightly to ensure DOM is fully rendered in Blazor
+        setTimeout(() => {
             const element = document.getElementById(elementId);
-            if (element) {
-                element.innerHTML = `
-                    <div class="alert alert-danger mb-3 p-2" style="font-size: 0.9rem;">
-                        <strong><i class="bi bi-exclamation-triangle"></i> Camera Error</strong><br>
-                        ${err.name === 'NotAllowedError' ? 'Please grant camera permissions.' : 'Could not start camera (requires HTTPS or a valid camera). Please use the fallback below.'}
-                    </div>
-                    <div class="mb-3">
-                        <label class="btn btn-primary w-100">
-                            <i class="bi bi-image"></i> Scan from Image File
-                            <input type="file" id="qr-file-input" accept="image/*" hidden />
-                        </label>
-                    </div>
-                `;
-                
-                document.getElementById('qr-file-input').addEventListener('change', (e) => {
-                    if (e.target.files.length === 0) return;
-                    const file = e.target.files[0];
-                    this.html5Qrcode.scanFile(file, true)
-                        .then(decodedText => {
-                            dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
-                            this.stop();
-                        })
-                        .catch(err => {
-                            alert("Could not read QR code from image. Try another picture.");
-                        });
-                });
-            }
-        };
-
-        // Try advanced high-res hardware-accelerated camera first
-        this.html5Qrcode.start(
-            { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
-            advancedConfig,
-            handleSuccess,
-            handleError
-        ).catch(err => {
-            console.warn("Advanced camera configuration failed, trying basic fallback...", err);
-            
-            // If it failed due to permissions, don't retry, just show the error
-            if (err.name === 'NotAllowedError') {
-                injectFallbackUI(err);
+            if (!element) {
+                console.error("Scanner element not found in DOM");
                 return;
             }
 
-            // Retry with basic configuration
+            this.html5Qrcode = new Html5Qrcode(elementId);
+            
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 300, height: 150 },
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                }
+            };
+
+            const handleSuccess = (decodedText) => {
+                dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
+                this.stop();
+            };
+
+            const injectFallbackUI = (errMessage) => {
+                const el = document.getElementById(elementId);
+                if (el) {
+                    el.innerHTML = `
+                        <div class="alert alert-danger mb-3 p-2" style="font-size: 0.9rem;">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Camera Error</strong><br>
+                            Could not start camera. Please ensure permissions are granted and you are on HTTPS.
+                            <br><small class="text-muted">${errMessage || 'Unknown error'}</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="btn btn-primary w-100">
+                                <i class="bi bi-image"></i> Scan from Image File
+                                <input type="file" id="qr-file-input" accept="image/*" hidden />
+                            </label>
+                        </div>
+                    `;
+                    
+                    const fileInput = document.getElementById('qr-file-input');
+                    if (fileInput) {
+                        fileInput.addEventListener('change', (e) => {
+                            if (e.target.files.length === 0) return;
+                            const file = e.target.files[0];
+                            this.html5Qrcode.scanFile(file, true)
+                                .then(decodedText => {
+                                    dotnetHelper.invokeMethodAsync('OnQrCodeScanned', decodedText);
+                                    this.stop();
+                                })
+                                .catch(err => {
+                                    alert("Could not read QR code from image. Try another picture.");
+                                });
+                        });
+                    }
+                }
+            };
+
+            // Request camera with basic environment facing mode
+            // Avoid overly strict resolution requests that break mobile browsers
             this.html5Qrcode.start(
                 { facingMode: "environment" },
-                basicConfig,
+                config,
                 handleSuccess,
-                handleError
-            ).catch(basicErr => {
-                console.error("Basic camera fallback completely failed: ", basicErr);
-                injectFallbackUI(basicErr);
+                (errorMessage) => { /* ignore parse errors */ }
+            ).catch(err => {
+                console.error("Camera failed to start: ", err);
+                const errMsg = typeof err === 'string' ? err : (err && err.message ? err.message : 'Permission denied or no camera found');
+                injectFallbackUI(errMsg);
             });
-        });
+        }, 150);
     },
 
     stop: function () {
         if (this.html5Qrcode) {
             try {
-                // If it was never fully started (e.g. error caught), stop() will fail, so we catch it
-                this.html5Qrcode.stop().then(() => {
+                if (this.html5Qrcode.isScanning) {
+                    this.html5Qrcode.stop().then(() => {
+                        this.html5Qrcode.clear();
+                        this.html5Qrcode = null;
+                    }).catch(err => {
+                        this.html5Qrcode.clear();
+                        this.html5Qrcode = null;
+                    });
+                } else {
                     this.html5Qrcode.clear();
                     this.html5Qrcode = null;
-                }).catch(err => {
-                    this.html5Qrcode.clear();
-                    this.html5Qrcode = null;
-                });
+                }
             } catch(e) {
-                this.html5Qrcode.clear();
+                try { this.html5Qrcode.clear(); } catch(ex) {}
                 this.html5Qrcode = null;
             }
         }

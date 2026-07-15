@@ -48,11 +48,12 @@
             <div class="col-md-6 d-flex">
                 <input type="text" class="form-control me-2" placeholder="Search by Asset Tag, SN, IP, or User..." @bind="SearchQuery" @bind:event="oninput" @onkeyup="FilterAssets" />
                 <div class="btn-group" role="group">
-                    <input type="radio" class="btn-check" name="viewToggle" id="listView" autocomplete="off" checked="@(!IsCardView)">
-                    <label class="btn btn-outline-secondary" for="listView" @onclick="@(() => IsCardView = false)"><i class="bi bi-list-ul"></i></label>
-
-                    <input type="radio" class="btn-check" name="viewToggle" id="cardView" autocomplete="off" checked="@IsCardView">
-                    <label class="btn btn-outline-secondary" for="cardView" @onclick="@(() => IsCardView = true)"><i class="bi bi-grid"></i></label>
+                    <button type="button" class="btn @(!IsCardView ? "btn-secondary" : "btn-outline-secondary")" @onclick="@(() => IsCardView = false)">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                    <button type="button" class="btn @(IsCardView ? "btn-secondary" : "btn-outline-secondary")" @onclick="@(() => IsCardView = true)">
+                        <i class="bi bi-grid"></i>
+                    </button>
                 </div>
                 <button class="btn btn-outline-secondary shadow-sm" @onclick='() => OpenScannerModal("GlobalSearch")'>
             <i class="bi bi-upc-scan"></i> Scan QR
@@ -797,11 +798,12 @@
                 </div>
                 <div class="modal-body text-center">
                     <div class="btn-group w-100 mb-3" role="group">
-                        <input type="radio" class="btn-check" name="scannerMode" id="modeBarcode" autocomplete="off" checked="@(!IsTextScanMode)">
-                        <label class="btn btn-outline-primary" for="modeBarcode" @onclick="@(() => IsTextScanMode = false)"><i class="bi bi-upc-scan"></i> Barcode</label>
-
-                        <input type="radio" class="btn-check" name="scannerMode" id="modeText" autocomplete="off" checked="@IsTextScanMode">
-                        <label class="btn btn-outline-primary" for="modeText" @onclick="@(() => IsTextScanMode = true)"><i class="bi bi-fonts"></i> Text (OCR)</label>
+                        <button type="button" class="btn @(!IsTextScanMode ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => IsTextScanMode = false)">
+                            <i class="bi bi-upc-scan"></i> Barcode
+                        </button>
+                        <button type="button" class="btn @(IsTextScanMode ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => IsTextScanMode = true)">
+                            <i class="bi bi-fonts"></i> Text (OCR)
+                        </button>
                     </div>
 
                     @if (IsTextScanMode)
