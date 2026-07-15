@@ -1290,6 +1290,7 @@
     private async Task CloseScannerModal()
     {
         IsScannerOpen = false;
+        IsOcrProcessing = false;
         try 
         {
             await JSRuntime.InvokeVoidAsync("qrScanner.stop");
