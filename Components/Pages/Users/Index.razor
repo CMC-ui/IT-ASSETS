@@ -14,11 +14,11 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div class="btn-group shadow-sm" role="group">
-        <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off" checked="@(!IsCardView)" @onclick="@(() => IsCardView = false)">
-        <label class="btn btn-outline-primary" for="listView" title="List View"><i class="bi bi-list-ul"></i></label>
+        <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off" checked="@(!IsCardView)">
+        <label class="btn btn-outline-primary" for="listView" title="List View" @onclick="@(() => IsCardView = false)"><i class="bi bi-list-ul"></i></label>
 
-        <input type="radio" class="btn-check" name="viewMode" id="cardView" autocomplete="off" checked="@IsCardView" @onclick="@(() => IsCardView = true)">
-        <label class="btn btn-outline-primary" for="cardView" title="Grid View"><i class="bi bi-grid-fill"></i></label>
+        <input type="radio" class="btn-check" name="viewMode" id="cardView" autocomplete="off" checked="@IsCardView">
+        <label class="btn btn-outline-primary" for="cardView" title="Grid View" @onclick="@(() => IsCardView = true)"><i class="bi bi-grid-fill"></i></label>
     </div>
 
     @if (isAdmin)
