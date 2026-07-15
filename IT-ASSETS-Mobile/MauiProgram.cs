@@ -22,6 +22,13 @@ public static class MauiProgram
 		builder.Logging.AddDebug();
 #endif
 
+#if ANDROID
+        Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("CustomUserAgent", (handler, view) =>
+        {
+            handler.PlatformView.Settings.UserAgentString += " MAUI-App";
+        });
+#endif
+
 		return builder.Build();
 	}
 }
