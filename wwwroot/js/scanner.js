@@ -112,10 +112,23 @@ window.qrScanner = {
 
             // Create a hidden canvas to draw the current video frame
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            
+            // Crop to the center area where the user is focusing the text
+            // This massively reduces background noise that confuses Tesseract
+            const cropWidth = video.videoWidth * 0.8;
+            const cropHeight = video.videoHeight * 0.3;
+            const startX = (video.videoWidth - cropWidth) / 2;
+            const startY = (video.videoHeight - cropHeight) / 2;
+
+            canvas.width = cropWidth;
+            canvas.height = cropHeight;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Apply CSS filters to the canvas to binarize and clean the image
+            ctx.filter = 'grayscale(100%) contrast(300%) brightness(120%)';
+            
+            // Draw only the cropped portion from the video onto the canvas
+            ctx.drawImage(video, startX, startY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
             // Notify Blazor that OCR has started
             await dotnetHelper.invokeMethodAsync('OnOcrProcessingStarted');
