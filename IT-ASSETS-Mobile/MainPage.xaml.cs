@@ -25,12 +25,25 @@ public partial class MainPage : ContentPage
         string cssInjection = @"
             window.isMauiApp = true;
             localStorage.setItem('isMauiApp', 'true');
+            
+            // Inject theme
             if (!document.getElementById('maui-theme')) {
                 var style = document.createElement('style');
                 style.id = 'maui-theme';
                 style.innerHTML = ':root { --bs-primary: #512BD4; --bs-primary-rgb: 81, 43, 212; } .bg-primary, .btn-primary, .text-primary { background-color: #512BD4 !important; border-color: #512BD4 !important; } .text-primary { color: #512BD4 !important; background-color: transparent !important; }';
                 document.head.appendChild(style);
             }
+
+            // Aggressive failsafe: forcefully patch the scanner in case the remote web app hasn't been updated yet
+            setInterval(function() {
+                if (typeof window.qrScanner !== 'undefined' && !window.qrScanner.isMauiPatched) {
+                    window.qrScanner.start = function(elementId, dotnetHelper) {
+                        window.dotnetHelper = dotnetHelper;
+                        window.location.href = 'mauiscan://start';
+                    };
+                    window.qrScanner.isMauiPatched = true;
+                }
+            }, 500);
         ";
         await AppWebView.EvaluateJavaScriptAsync(cssInjection);
     }
