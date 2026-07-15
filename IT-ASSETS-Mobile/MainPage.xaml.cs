@@ -22,7 +22,17 @@ public partial class MainPage : ContentPage
 
     private async void AppWebView_Navigated(object sender, WebNavigatedEventArgs e)
     {
-        await AppWebView.EvaluateJavaScriptAsync("window.isMauiApp = true;");
+        string cssInjection = @"
+            window.isMauiApp = true;
+            localStorage.setItem('isMauiApp', 'true');
+            if (!document.getElementById('maui-theme')) {
+                var style = document.createElement('style');
+                style.id = 'maui-theme';
+                style.innerHTML = ':root { --bs-primary: #512BD4; --bs-primary-rgb: 81, 43, 212; } .bg-primary, .btn-primary, .text-primary { background-color: #512BD4 !important; border-color: #512BD4 !important; } .text-primary { color: #512BD4 !important; background-color: transparent !important; }';
+                document.head.appendChild(style);
+            }
+        ";
+        await AppWebView.EvaluateJavaScriptAsync(cssInjection);
     }
 
     private async void StartScanner()
