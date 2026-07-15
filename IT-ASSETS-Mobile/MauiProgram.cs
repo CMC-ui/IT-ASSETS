@@ -26,9 +26,24 @@ public static class MauiProgram
         Microsoft.Maui.Handlers.WebViewHandler.Mapper.AppendToMapping("CustomUserAgent", (handler, view) =>
         {
             handler.PlatformView.Settings.UserAgentString += " MAUI-App";
+            handler.PlatformView.SetWebChromeClient(new CustomWebChromeClient());
         });
 #endif
 
 		return builder.Build();
 	}
 }
+
+#if ANDROID
+public class CustomWebChromeClient : Android.Webkit.WebChromeClient
+{
+    public override void OnPermissionRequest(Android.Webkit.PermissionRequest request)
+    {
+        try
+        {
+            request.Grant(request.GetResources());
+        }
+        catch { }
+    }
+}
+#endif

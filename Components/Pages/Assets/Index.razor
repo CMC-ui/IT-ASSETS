@@ -798,10 +798,10 @@
                 </div>
                 <div class="modal-body text-center">
                     <div class="btn-group w-100 mb-3" role="group">
-                        <button type="button" class="btn @(!IsTextScanMode ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => IsTextScanMode = false)">
+                        <button type="button" class="btn @(!IsTextScanMode ? "btn-primary" : "btn-outline-primary")" @onclick="SelectBarcodeMode">
                             <i class="bi bi-upc-scan"></i> Barcode
                         </button>
-                        <button type="button" class="btn @(IsTextScanMode ? "btn-primary" : "btn-outline-primary")" @onclick="@(() => IsTextScanMode = true)">
+                        <button type="button" class="btn @(IsTextScanMode ? "btn-primary" : "btn-outline-primary")" @onclick="SelectOcrMode">
                             <i class="bi bi-fonts"></i> Text (OCR)
                         </button>
                     </div>
@@ -1267,8 +1267,22 @@
 
     private bool IsScannerOpen = false;
     private DotNetObjectReference<Index>? dotNetRef;
+    private bool IsMauiApp = false;
 
     private string ScannerTargetField = "GlobalSearch";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try 
+            {
+                IsMauiApp = await JSRuntime.InvokeAsync<bool>("eval", "navigator.userAgent.includes('MAUI-App')");
+                StateHasChanged();
+            }
+            catch { }
+        }
+    }
 
     private async Task OpenScannerModal(string target = "GlobalSearch")
     {
@@ -1277,6 +1291,47 @@
         StateHasChanged();
         await Task.Delay(100); // Give DOM time to render the modal
         dotNetRef = DotNetObjectReference.Create(this);
+        
+        // Only start HTML5 camera automatically if we are not on MAUI, OR if we are on OCR mode
+        if (!IsMauiApp || IsTextScanMode)
+        {
+            try 
+            {
+                await JSRuntime.InvokeVoidAsync("qrScanner.start", "qr-reader", dotNetRef);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error starting scanner: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task StartMauiNativeScanner()
+    {
+        dotNetRef = DotNetObjectReference.Create(this);
+        try 
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "window.dotnetHelper = arguments[0]; window.location.href = 'mauiscan://start';", dotNetRef);
+        }
+        catch { }
+    }
+
+    private async Task SelectBarcodeMode()
+    {
+        IsTextScanMode = false;
+        if (IsMauiApp)
+        {
+            try 
+            {
+                await JSRuntime.InvokeVoidAsync("qrScanner.stop");
+            }
+            catch { }
+        }
+    }
+
+    private async Task SelectOcrMode()
+    {
+        IsTextScanMode = true;
         try 
         {
             await JSRuntime.InvokeVoidAsync("qrScanner.start", "qr-reader", dotNetRef);

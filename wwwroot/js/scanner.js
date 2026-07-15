@@ -2,12 +2,6 @@ window.qrScanner = {
     html5Qrcode: null,
 
     start: function (elementId, dotnetHelper) {
-        if (window.isMauiApp || localStorage.getItem('isMauiApp') === 'true' || navigator.userAgent.includes('MAUI-App')) {
-            window.dotnetHelper = dotnetHelper;
-            window.location.href = "mauiscan://start";
-            return;
-        }
-
         if (this.html5Qrcode) {
             this.stop();
         }
